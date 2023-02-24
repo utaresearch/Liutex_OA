@@ -1,12 +1,15 @@
 module liutex_mod
     !!-------------------------------------------------------------------------
     !! Module that contains subroutines and functions to aid in the 
-    !! research related to Liutex.
+    !! research of Liutex.
     !!
     !! By: Oscar Alvarez
     !! email: oscar.alvarez@uta.edu
     !!-------------------------------------------------------------------------
     implicit none
+
+    !! Interfaces
+    
 
     !! Parameters
 
@@ -16,8 +19,19 @@ module liutex_mod
 
 
     !! Functions
+    function roots_cubic(a, b, c) result(root)
+        !!! Finds the roots of a cubic polynomical equation 
+        !!! in the form of x^3 + a*x^2 + b*x + c = 0.
+        implicit none
+        real(8), intent(in) :: a, b, c
+        real(8), dimension(3) :: root
+
+    end function roots_cubic
+
     function eig_vals(mat) result(eig)
         implicit none
+        real(8), dimension(3,3) :: mat
+        real(8), dimension(3) :: eig
 
     end function eig_vals
 
