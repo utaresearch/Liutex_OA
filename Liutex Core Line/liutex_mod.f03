@@ -62,23 +62,22 @@ module liutex_mod
         complex(8), parameter :: i = (0.d0, 1.d0)   ! imaginary number i
         real(8), intent(in) :: a, b, c
         complex(8), dimension(3) :: root
-        real(8) :: q, r
-        complex(8) :: aa, bb
+        real(8) :: q, r, aa, bb
 
         q = a*a - 3.d0*b/9.d0
         r = (2.d0*a*a*a - 9.d0*a*b + 27.d0*c) / 54.d0
 
         aa = -sign(1.d0, r) * (abs(r) + sqrt(r*r - q*q*q))**(1.d0 / 3.d0)
         
-        if (aa .ne. 0.d0) then
-            bb = q / aa
-        else
+        if (aa == 0.d0) then
             bb = 0.d0
+        else
+            bb = q / aa
         end if
 
-        root(1) = (aa + bb) - a / 3.d0
-        root(2) = -0.5d0*(aa + bb) - (a / 3.d0) + i * sqrt(3.d0)/2.d0 * (aa - bb)
-        root(3) = -0.5d0*(aa + bb) - (a / 3.d0) - i * sqrt(3.d0)/2.d0 * (aa - bb)
+        root(1) = aa + bb - a / 3.d0
+        root(2) = cmplx(-0.5d0*(aa + bb) - (a / 3.d0), 0.5d0 * sqrt(3.d0) * (aa - bb), kind=8)
+        root(3) = conjg(root(2))
     end function roots_cubic_imag
 
 
@@ -104,6 +103,7 @@ module liutex_mod
 
 
     function eig_vals_real_3x3(mat) result(eig)
+        !!! Finds the real eigenvalues of a 3x3 matrix
         implicit none
         real(8), dimension(3,3) :: mat
         complex(8), dimension(3) :: eig
