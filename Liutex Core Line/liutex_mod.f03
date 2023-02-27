@@ -19,6 +19,97 @@ module liutex_mod
 
 
     !! Functions
+    function finite_diff_i(f, imax, jmax, kmax) result(df_dxi)
+        !!! Computes the finite difference derivative of a 3D function f(i,j,k)
+        !!! in the i-th direction. Or, for f(xi, eta, zeta), in the xi-direction.
+        implicit none
+        integer, intent(in) :: imax, jmax, kmax
+        real(8), dimension(imax,jmax,kmax), intent(in) :: f
+        real(8), dimension(imax,jmax,kmax) :: df_dxi
+        integer :: i, j, k
+
+        do k = 1, kmax
+            do j = 1, jmax
+                do i = 1, imax
+                        
+                    if (i == 1) then
+                        ! Forward difference
+                        df_dxi(i,j,k) = f(2,j,k) - f(1,j,k)
+                    else if (i == imax) then
+                        ! Backward difference
+                        df_dxi(i,j,k) = f(imax,j,k) - f(imax-1,j,k)
+                    else
+                        ! Central difference
+                        df_dxi(i,j,k) = 0.5d0 * ( f(i+1,j,k) - f(i-1,j,k) )
+                    end if
+
+                end do
+            end do
+        end do
+            
+    end function finite_diff_i
+
+    function finite_diff_j(f, imax, jmax, kmax) result(df_deta)
+        !!! Computes the finite difference derivative of a 3D function f(i,j,k)
+        !!! in the j-th direction. Or, for f(xi, eta, zeta), in the eta-direction.
+        implicit none
+        integer, intent(in) :: imax, jmax, kmax
+        real(8), dimension(imax,jmax,kmax), intent(in) :: f
+        real(8), dimension(imax,jmax,kmax) :: df_deta
+        integer :: i, j, k
+
+        do k = 1, kmax
+            do j = 1, jmax
+                do i = 1, imax
+                        
+                    if (j == 1) then
+                        ! Forward difference
+                        df_deta(i,j,k) = f(i,2,k) - f(i,1,k)
+                    else if (j == jmax) then
+                        ! Backward difference
+                        df_deta(i,j,k) = f(i,jmax,k) - f(i,jmax-1,k)
+                    else
+                        ! Central difference
+                        df_deta(i,j,k) = 0.5d0 * ( f(i,j+1,k) - f(i,j-1,k) )
+                    end if
+
+                end do
+            end do
+        end do
+            
+    end function finite_diff_j
+
+
+    function finite_diff_k(f, imax, jmax, kmax) result(df_dzeta)
+        !!! Computes the finite difference derivative of a 3D function f(i,j,k)
+        !!! in the k-th direction. Or, for f(xi, eta, zeta), in the zeta-direction.
+        implicit none
+        integer, intent(in) :: imax, jmax, kmax
+        real(8), dimension(imax,jmax,kmax), intent(in) :: f
+        real(8), dimension(imax,jmax,kmax) :: df_dzeta
+        integer :: i, j, k
+
+        do k = 1, kmax
+            do j = 1, jmax
+                do i = 1, imax
+                        
+                    if (k == 1) then
+                        ! Forward difference
+                        df_dzeta(i,j,k) = f(i,j,2) - f(i,j,1)
+                    else if (k == kmax) then
+                        ! Backward difference
+                        df_dzeta(i,j,k) = f(i,j,kmax) - f(i,j,kmax-1)
+                    else
+                        ! Central difference
+                        df_dzeta(i,j,k) = 0.5d0 * ( f(i,j,k+1) - f(i,j,k-1) )
+                    end if
+
+                end do
+            end do
+        end do
+            
+    end function finite_diff_k
+
 
     function are_roots_real_cubic(a, b, c) result(are_real)
         !!! Determines if the roots of a cubic polynomical equation 
