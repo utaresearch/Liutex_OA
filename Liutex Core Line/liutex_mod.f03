@@ -19,6 +19,27 @@ module liutex_mod
 
 
     !! Functions
+    function negative_def(mat) result(neg_def)
+        !!! Determines if a matrix is negative definite or not.
+        implicit none
+        real(8), dimension(3,3), intent(in) :: mat
+        logical :: neg_def
+        real(8) :: det
+        logical :: check1, check2, check3
+
+        check1 = mat(1,1) < 0.d0
+        
+        check2 = (mat(1,1)*mat(2,2) - mat(1,2)*mat(2,1)) > 0.d0
+
+        det = mat(1,1)*(mat(2,2)*mat(3,3) - mat(2,3)*mat(3,2))   &
+            - mat(2,1)*(mat(1,2)*mat(3,3) - mat(1,3)*mat(3,2))   &
+            + mat(3,1)*(mat(1,2)*mat(2,3) - mat(1,3)*mat(2,2))
+
+        check3 = det < 0.d0
+
+        neg_def = (check1 .and. check2 .and. check3)
+    end function negative_def
+
 
     function finite_diff(f, x, y, z, imax, jmax, kmax) result(df)
         implicit none
@@ -27,9 +48,13 @@ module liutex_mod
         real(8), dimension(imax,jmax,kmax,3) :: df
 
         real(8) :: f_xi, f_eta, f_zeta
-        real(8) :: y_xi, y_eta, y_zeta
+        real(8) :: x_xi, x_eta, x_zeta
         real(8) :: y_xi, y_eta, y_zeta
         real(8) :: z_xi, z_eta, z_zeta
+        real(8), dimension(imax,jmax,kmax) :: xi_x, xi_y, xi_z
+        real(8), dimension(imax,jmax,kmax) :: eta_x, eta_y, eta_z
+        real(8), dimension(imax,jmax,kmax) :: zeta_x, zeta_y, zeta_z
+        
         real(8) :: det
         integer :: i, j, k
 
@@ -37,93 +62,93 @@ module liutex_mod
             do j = 1, jmax
                 do i = 1, imax
 
-                !! Finite-Difference in parametric space.
-                if(i == 1) then
-                    f_xi = f(2, j, k) - f(1, j, k)
+                    !! Finite-Difference in parametric space.
+                    if(i == 1) then
+                        f_xi = f(2, j, k) - f(1, j, k)
 
-                    x_xi = x(2, j, k) - x(1, j, k)
-                    y_xi = y(2, j, k) - y(1, j, k)
-                    z_xi = z(2, j, k) - z(1, j, k)
-                else if(i == imax) then
-                    f_xi = f(imax, j, k) - f(imax-1, j, k)
+                        x_xi = x(2, j, k) - x(1, j, k)
+                        y_xi = y(2, j, k) - y(1, j, k)
+                        z_xi = z(2, j, k) - z(1, j, k)
+                    else if(i == imax) then
+                        f_xi = f(imax, j, k) - f(imax-1, j, k)
 
-                    x_xi = x(imax, j, k)-x(imax-1, j, k)
-                    y_xi = y(imax, j, k)-y(imax-1, j, k)
-                    z_xi = z(imax, j, k)-z(imax-1, j, k)
-                else
-                    f_xi = 0.5d0*(f(i+1, j, k) - f(i-1, j, k))
+                        x_xi = x(imax, j, k)-x(imax-1, j, k)
+                        y_xi = y(imax, j, k)-y(imax-1, j, k)
+                        z_xi = z(imax, j, k)-z(imax-1, j, k)
+                    else
+                        f_xi = 0.5d0*(f(i+1, j, k) - f(i-1, j, k))
 
-                    x_xi = 0.5d0*(x(i+1, j, k) - x(i-1, j, k))
-                    y_xi = 0.5d0*(y(i+1, j, k) - y(i-1, j, k))
-                    z_xi = 0.5d0*(z(i+1, j, k) - z(i-1, j, k))
-                end if
+                        x_xi = 0.5d0*(x(i+1, j, k) - x(i-1, j, k))
+                        y_xi = 0.5d0*(y(i+1, j, k) - y(i-1, j, k))
+                        z_xi = 0.5d0*(z(i+1, j, k) - z(i-1, j, k))
+                    end if
 
-                if(j == 1) then
-                    f_eta = f(i, 2, k) - f(i, 1, k)
+                    if(j == 1) then
+                        f_eta = f(i, 2, k) - f(i, 1, k)
 
-                    x_eta = x(i, 2, k) - x(i, 1, k)
-                    y_eta = y(i, 2, k) - y(i, 1, k)
-                    z_eta = z(i, 2, k) - z(i, 1, k)
-                else if(j == jmax) then
-                    f_eta = f(i, jmax, k) - f(i, jmax-1, k)
+                        x_eta = x(i, 2, k) - x(i, 1, k)
+                        y_eta = y(i, 2, k) - y(i, 1, k)
+                        z_eta = z(i, 2, k) - z(i, 1, k)
+                    else if(j == jmax) then
+                        f_eta = f(i, jmax, k) - f(i, jmax-1, k)
 
-                    x_eta = x(i, jmax, k) - x(i, jmax-1, k)
-                    y_eta = y(i, jmax, k) - y(i, jmax-1, k)
-                    z_eta = z(i, jmax, k) - z(i, jmax-1, k)
-                else
-                    f_eta = 0.5d0*(f(i, j+1, k) - f(i, j-1, k))
+                        x_eta = x(i, jmax, k) - x(i, jmax-1, k)
+                        y_eta = y(i, jmax, k) - y(i, jmax-1, k)
+                        z_eta = z(i, jmax, k) - z(i, jmax-1, k)
+                    else
+                        f_eta = 0.5d0*(f(i, j+1, k) - f(i, j-1, k))
 
-                    x_eta = 0.5d0*(x(i, j+1, k) - x(i, j-1, k))
-                    y_eta = 0.5d0*(y(i, j+1, k) - y(i, j-1, k))
-                    z_eta = 0.5d0*(z(i, j+1, k) - z(i, j-1, k))
-                end if
+                        x_eta = 0.5d0*(x(i, j+1, k) - x(i, j-1, k))
+                        y_eta = 0.5d0*(y(i, j+1, k) - y(i, j-1, k))
+                        z_eta = 0.5d0*(z(i, j+1, k) - z(i, j-1, k))
+                    end if
 
-                if(k == 1) then
-                    f_zeta = f(i, j, 2) - f(i, j, 1)
-                    x_zeta = x(i, j, 2) - x(i, j, 1)
-                    y_zeta = y(i, j, 2) - y(i, j, 1)
-                    z_zeta = z(i, j, 2) - z(i, j, 1)
-                else if(k == kmax) then
-                    f_zeta = f(i, j, kmax) - f(i, j, kmax-1)
+                    if(k == 1) then
+                        f_zeta = f(i, j, 2) - f(i, j, 1)
+                        x_zeta = x(i, j, 2) - x(i, j, 1)
+                        y_zeta = y(i, j, 2) - y(i, j, 1)
+                        z_zeta = z(i, j, 2) - z(i, j, 1)
+                    else if(k == kmax) then
+                        f_zeta = f(i, j, kmax) - f(i, j, kmax-1)
 
-                    x_zeta = x(i, j, kmax) - x(i, j, kmax-1)
-                    y_zeta = y(i, j, kmax) - y(i, j, kmax-1)
-                    z_zeta = z(i, j, kmax) - z(i, j, kmax-1)
-                else
-                    f_zeta = 0.5d0*(f(i, j, k+1) - f(i, j, k-1))
+                        x_zeta = x(i, j, kmax) - x(i, j, kmax-1)
+                        y_zeta = y(i, j, kmax) - y(i, j, kmax-1)
+                        z_zeta = z(i, j, kmax) - z(i, j, kmax-1)
+                    else
+                        f_zeta = 0.5d0*(f(i, j, k+1) - f(i, j, k-1))
 
-                    x_zeta = 0.5d0*(x(i, j, k+1) - x(i, j, k-1))
-                    y_zeta = 0.5d0*(y(i, j, k+1) - y(i, j, k-1))
-                    z_zeta = 0.5d0*(z(i, j, k+1) - z(i, j, k-1))
-                end if
+                        x_zeta = 0.5d0*(x(i, j, k+1) - x(i, j, k-1))
+                        y_zeta = 0.5d0*(y(i, j, k+1) - y(i, j, k-1))
+                        z_zeta = 0.5d0*(z(i, j, k+1) - z(i, j, k-1))
+                    end if
 
-                !! Jacobian Transformation from parametric to global space.
-                det =   x_xi*(y_eta*z_zeta-y_zeta*z_eta)  &
-                        - x_eta*(y_xi*z_zeta-y_zeta*z_xi)   &
-                        + x_zeta*(y_xi*z_eta-y_eta*z_xi)
+                    !! Jacobian Transformation from parametric to global space.
+                    det =   x_xi*(y_eta*z_zeta-y_zeta*z_eta)  &
+                            - x_eta*(y_xi*z_zeta-y_zeta*z_xi)   &
+                            + x_zeta*(y_xi*z_eta-y_eta*z_xi)
 
-                det = 1.0d0 / det
+                    det = 1.d0 / det
 
-                xi_x(i,j,k) = det*(y_eta*z_zeta - y_zeta*z_eta)
-                xi_y(i,j,k) = det*(x_zeta*z_eta - x_eta*z_zeta)
-                xi_z(i,j,k) = det*(x_eta*y_zeta - x_zeta*y_eta)
+                    xi_x(i,j,k) = det*(y_eta*z_zeta - y_zeta*z_eta)
+                    xi_y(i,j,k) = det*(x_zeta*z_eta - x_eta*z_zeta)
+                    xi_z(i,j,k) = det*(x_eta*y_zeta - x_zeta*y_eta)
 
-                eta_x(i,j,k) = det*(y_zeta*z_xi - y_xi*z_zeta)
-                eta_y(i,j,k) = det*(x_xi*z_zeta - x_zeta*z_xi)
-                eta_z(i,j,k) = det*(x_zeta*y_xi - x_xi*y_zeta)
+                    eta_x(i,j,k) = det*(y_zeta*z_xi - y_xi*z_zeta)
+                    eta_y(i,j,k) = det*(x_xi*z_zeta - x_zeta*z_xi)
+                    eta_z(i,j,k) = det*(x_zeta*y_xi - x_xi*y_zeta)
 
-                zeta_x(i,j,k) = det*(y_xi*z_eta - y_eta*z_xi)
-                zeta_y(i,j,k) = det*(x_eta*z_xi - x_xi*z_eta)
-                zeta_z(i,j,k) = det*(x_xi*y_eta - x_eta*y_xi)
+                    zeta_x(i,j,k) = det*(y_xi*z_eta - y_eta*z_xi)
+                    zeta_y(i,j,k) = det*(x_eta*z_xi - x_xi*z_eta)
+                    zeta_z(i,j,k) = det*(x_xi*y_eta - x_eta*y_xi)
 
-                !! Partial derivatives
-                df(i,j,k,1) = f_xi*xi_x(i,j,k) + f_eta*eta_x(i,j,k) + f_zeta*zeta_x(i,j,k)
-                df(i,j,k,2) = f_xi*xi_y(i,j,k) + f_eta*eta_y(i,j,k) + f_zeta*zeta_y(i,j,k)
-                df(i,j,k,3) = f_xi*xi_z(i,j,k) + f_eta*eta_z(i,j,k) + f_zeta*zeta_z(i,j,k)
+                    !! Partial derivatives in global space: (1) df_dx, (2) df_dy, (3) df_dz
+                    df(i,j,k,1) = f_xi*xi_x(i,j,k) + f_eta*eta_x(i,j,k) + f_zeta*zeta_x(i,j,k)
+                    df(i,j,k,2) = f_xi*xi_y(i,j,k) + f_eta*eta_y(i,j,k) + f_zeta*zeta_y(i,j,k)
+                    df(i,j,k,3) = f_xi*xi_z(i,j,k) + f_eta*eta_z(i,j,k) + f_zeta*zeta_z(i,j,k)
 
+                end do
             end do
         end do
-    end do
 
     end function finite_diff
 

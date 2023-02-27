@@ -56,7 +56,6 @@ program get_seeds_liu_core_line
   integer :: skip
   integer :: istart, iend, jstart, jend, kstart, kend
   integer :: iii
-  integer :: imax_local, jmax_local, kmax_local
 
 
   inputfilename = 'input.txt'
@@ -80,11 +79,6 @@ program get_seeds_liu_core_line
   read(fin1, *) datafileprefix
 
   close(fin1)
-
-
-  imax_local = iend - istart + 1
-  jmax_local = jend - jstart + 1
-  kmax_local = kend - kstart + 1
 
   call itoa6(f_start, chars)
 
