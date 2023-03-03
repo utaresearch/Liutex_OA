@@ -174,7 +174,7 @@ program main
         allocate(omega_l(imax,jmax,kmax))
 
         r(:,:,:,:) = f(:,:,:, 8:10)
-        l_mag = f(:,:,:,11)
+        l_mag = f(:,:,:, 11)
         l_mag_gradient(:,:,:,:) = f(:,:,:, 14:16)
         omega_l = f(:,:,:, 17)
         
@@ -187,6 +187,7 @@ program main
         l_core_z = 0.d0
 
         !! Apply conditions for liutex core vector
+
         tol1 = 1.d-6    !! tolerance for condition 1
         tol2 = 1.d-6    !! tolerance for condition 2
         tol3 = 1.d-3    !! tolerance for condition 3
@@ -203,6 +204,7 @@ program main
                         norm_del_l_mag = norm2(del_l_mag)
                         r_dot_del_l_mag = dot_product(r_ijk, del_l_mag)
 
+                        !! Conditions
                         condition1 = (norm_del_l_mag <= tol1)
                         
                         condition2 = (norm2(cross_product_3d(r_ijk, del_l_mag)) <= tol2)
@@ -217,7 +219,8 @@ program main
                         ! write(*,*)  condition1,     condition2,     condition3
 
                         if (condition3) then
-                            write(*,*) 'i,j,k', i, j, k
+                            write(*,*)
+                            write(*,*) 'i,j,k:', i, j, k
                             write(*,*) 'condition 1,    condition 2,    condition 3'
                             write(*,*)  condition1,     condition2,     condition3
                         end if
