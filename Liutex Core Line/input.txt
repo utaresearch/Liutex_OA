@@ -1,0 +1,8 @@
+401500          ! start time step
+401500          ! ending time step
+100             ! skip
+1, 1920          ! istart, iend
+1, 128          ! jstart, jend
+1, 241          ! kstart, kend
+1.0e-4          ! Omega epsilon
+coreLine       ! output file name

@@ -1,7 +1,7 @@
-l_c = new_vect = gradient_direction with liutex magnitude
-
 Apply conditions at point (if not satisfied then new_vect = 0,0,0):
-omega bigger than 0.5
-local maximum => del_r almost 0 (near zero)
-liutex and gradient cross product near zero
-liutex and gradient dot product near 1 (parallel)
+ + omega bigger than 0.5
+ + local maximum => del_r almost 0 (near zero)
+ + liutex and gradient cross product near zero
+ + liutex and gradient dot product near 1 (parallel)
+
+l_core = gradient_direction with liutex magnitude
