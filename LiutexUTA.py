@@ -20,7 +20,7 @@ def liutex_3d(velocity_gradient_matrix : list) -> tuple([float, list]):
     if np.isrealobj(eig_val):
         return 0, np.array([0.0, 0.0, 0.0])
     
-    # Find real eigenvalue/eigenvector
+    # Find location (index) of real eigenvalue/eigenvector
     for i in range(3):
         if eig_val[i].imag == 0.0:
             real_index = i

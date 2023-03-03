@@ -3,7 +3,7 @@ import numpy as np
 # Data grid dimensions
 ni = 20
 nj = 20
-nk = 50    
+nk = 50
 step_size = 0.5      # Step size
 
 # Function constants

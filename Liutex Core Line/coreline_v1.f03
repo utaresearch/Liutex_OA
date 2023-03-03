@@ -160,6 +160,8 @@ program main
         close(fin2)
 
         print*, "Function File Read Complete !!"
+
+        write(*,*) f(1,1,1,1)
     end do
   
 end program main
