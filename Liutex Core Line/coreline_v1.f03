@@ -27,17 +27,19 @@ program main
     logical :: lexist
 
     !! Other stuff
-    real(8), dimension(:,:,:,:), allocatable :: f
+    real(8), dimension(:,:,:,:), allocatable :: f, f2
     real(8), dimension(:,:,:,:), allocatable :: r, l_mag_gradient
     real(8), dimension(:,:,:), allocatable :: x, y, z
     real(8), dimension(:,:,:), allocatable :: l_mag, omega_l
     real(8), dimension(:,:,:), allocatable :: l_core_x, l_core_y, l_core_z
     real(8), dimension(3) :: del_l_mag, r_ijk, normed_del_l_mag
+    ! real(8), dimension(3) :: normed_r_ijk
     real(8) :: r_dot_del_l_mag, norm_del_l_mag
     real(8) :: tol1, tol2, tol3
-    logical :: condition1, condition2, condition3, conditions
+    logical :: condition1, condition2, condition3, condition4, all_conditions
     integer :: imax, jmax, kmax, nx
     integer :: i, j, k
+    integer :: l_core_counter
 
     
     !! Program start
@@ -181,7 +183,9 @@ program main
         allocate(l_core_x(imax,jmax,kmax))   !! New Liutex Core Vector
         allocate(l_core_y(imax,jmax,kmax))   !! New Liutex Core Vector
         allocate(l_core_z(imax,jmax,kmax))   !! New Liutex Core Vector
-
+        
+        write(*,*) 'Finding the Liutex Core Vector Field'
+        
         l_core_x = 0.d0
         l_core_y = 0.d0
         l_core_z = 0.d0
@@ -192,41 +196,39 @@ program main
         tol2 = 1.d-6    !! tolerance for condition 2
         tol3 = 1.d-3    !! tolerance for condition 3
 
+        l_core_counter = 0
+
         do k = 1, kmax
             do j = 1, jmax
                 do i = 1, imax
 
-                    if (omega_l(i,j,k) >= 0.5) then
+                    condition1 = (omega_l(i,j,k) >= 0.5)
+                    
+                    if (condition1) then
 
                         del_l_mag = (/ l_mag_gradient(i,j,k,1), l_mag_gradient(i,j,k,2), l_mag_gradient(i,j,k,3) /)
                         r_ijk = (/ r(i,j,k,1), r(i,j,k,2), r(i,j,k,3) /)
+
+                        normed_del_l_mag = del_l_mag / norm2(del_l_mag)
+                        ! normed_r_ijk = r_ijk / norm2(r_ijk)
+                        ! r_dot_del_l_mag = dot_product(normed_r_ijk, normed_del_l_mag)
                         
                         norm_del_l_mag = norm2(del_l_mag)
                         r_dot_del_l_mag = dot_product(r_ijk, del_l_mag)
 
                         !! Conditions
-                        condition1 = (norm_del_l_mag <= tol1)
+                        condition2 = (norm_del_l_mag <= tol1)
                         
-                        condition2 = (norm2(cross_product_3d(r_ijk, del_l_mag)) <= tol2)
+                        condition3 = (norm2(cross_product_3d(r_ijk, del_l_mag)) <= tol2)
                         
-                        condition3 = (r_dot_del_l_mag >= (1.d0 - tol3)) .and. (r_dot_del_l_mag <= (1.d0 + tol3))
+                        ! condition3 = (r_dot_del_l_mag >= (1.d0 - tol3)) .and. (r_dot_del_l_mag <= (1.d0 + tol3))
+                        condition4 = .true.
+                        
+                        all_conditions = condition2 .and. condition3 .and. condition4
 
-                        conditions = condition1 .and. condition2 .and. condition3
+                        if (all_conditions) then
 
-                        ! write(*,*)
-                        ! write(*,*) 'i,j,k', i, j, k
-                        ! write(*,*) 'condition 1,    condition 2,    condition 3'
-                        ! write(*,*)  condition1,     condition2,     condition3
-
-                        if (condition3) then
-                            write(*,*)
-                            write(*,*) 'i,j,k:', i, j, k
-                            write(*,*) 'condition 1,    condition 2,    condition 3'
-                            write(*,*)  condition1,     condition2,     condition3
-                        end if
-
-                        if (conditions) then
-
+                            !! Getting the direction vector of del liutex magnitude (del_l_mag)
                             if (norm_del_l_mag == 0.d0) then
                                 normed_del_l_mag = del_l_mag
                             else
@@ -237,17 +239,49 @@ program main
                             l_core_y(i,j,k) = l_mag(i,j,k) * normed_del_l_mag(2)
                             l_core_z(i,j,k) = l_mag(i,j,k) * normed_del_l_mag(3)
 
-                            write(*,*) 'i,j,k'
-                            write(*,*) i,j,k
+                            l_core_counter = l_core_counter + 1
 
                         end if
 
                     end if
-
+        
                 end do
             end do
         end do
+
+        !! Check if any liutex core lines were found.
+        if (l_core_counter == 0) then
+            !! This should ONLY happen if there there is no turbulence/vortices.
+            write(*,*)
+            write(*,*) 'NO LIUTEX CORE LINES FOUND FOR: ', funcfilename
+            goto 1
+        else 
+            write(*,*)
+            write(*,*) 'Liutex Core Lines Found: ', l_core_counter
+        end if
+
+        nvar = nvar + 3
+        allocate(f2(imax,jmax,kmax,nvar))
+
+        f2(:,:,:, 1:nvar-3) = f
+        deallocate(f)
         
+        f2(:,:,:, nvar-2)   = l_core_x
+        f2(:,:,:, nvar-1)   = l_core_y
+        f2(:,:,:, nvar)     = l_core_z
+        
+        outputfilename = 'data/corelines_'//trim(datafileprefix)//'_'//chars//'.fun'
+
+        open(fout1, file=trim(outputfilename), form='unformatted', action='write')
+        write(fout1) imax, jmax, kmax, nvar
+        write(fout1) ((((f2(i, j, k, nx), i=1,imax), j=1,jmax), k=1,kmax), nx=1,nvar)
+        close(fout1)
+        
+        write(*,*)
+        write(*,*) 'New function (.fun) file created: ', outputfilename
+
+        1 continue
+
         deallocate(r)
         deallocate(l_mag)
         deallocate(l_mag_gradient)
@@ -255,7 +289,6 @@ program main
         deallocate(l_core_x)
         deallocate(l_core_y)
         deallocate(l_core_z)
-        deallocate(f)
         
     end do
 
