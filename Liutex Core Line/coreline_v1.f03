@@ -17,7 +17,7 @@ program main
 
     !! File handling
     integer, parameter :: fin1 = 10, fin2 = 20, fout1 = 30
-    character(100) :: inputfilename, gridfilename, funcfilename, outputfilename
+    character(100) :: inputfilename, gridfilename, funcfilename, outputfilename, pointfilename
     character(100) :: msg, ignore, datafileprefix
     character(6) :: chars
     integer :: ios, nvar
@@ -186,6 +186,9 @@ program main
         
         write(*,*) 'Finding the Liutex Core Vector Field'
         
+        pointfilename = 'data/corepoints_'//trim(datafileprefix)//'_'//chars//'.dat'
+        open(fout1, file=trim(pointfilename), form='formatted', action='write')
+
         l_core_x = 0.d0
         l_core_y = 0.d0
         l_core_z = 0.d0
@@ -241,6 +244,9 @@ program main
 
                             l_core_counter = l_core_counter + 1
 
+                            !! Write liutex core points to file
+                            write(fout1) x(i,j,k), y(i,j,k), z(i,j,k)
+
                         end if
 
                     end if
@@ -248,6 +254,8 @@ program main
                 end do
             end do
         end do
+
+        close(fout1)
 
         !! Check if any liutex core lines were found.
         if (l_core_counter == 0) then
@@ -270,6 +278,9 @@ program main
         f2(:,:,:, nvar-1)   = l_core_y
         f2(:,:,:, nvar)     = l_core_z
         
+
+        write(*,*) 'Writing Function (.fun) file.'
+
         outputfilename = 'data/corelines_'//trim(datafileprefix)//'_'//chars//'.fun'
 
         open(fout1, file=trim(outputfilename), form='unformatted', action='write')
