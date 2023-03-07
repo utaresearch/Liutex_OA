@@ -36,11 +36,18 @@ program main
     real(8), dimension(3) :: lmg_vec_x1, lmg_vec_x2, lmg_vec_x3, lmg_vec_x4
     real(8), dimension(3) :: lmg_vec_y1, lmg_vec_y2, lmg_vec_y3, lmg_vec_y4
     real(8), dimension(3) :: lmg_vec_z1, lmg_vec_z2, lmg_vec_z3, lmg_vec_z4
+    real(8), dimension(3) :: lmg_axis_x1, lmg_axis_x2
+    real(8), dimension(3) :: lmg_axis_y1, lmg_axis_y2
+    real(8), dimension(3) :: lmg_axis_z1, lmg_axis_z2 
     real(8) :: lmg_norm, r_norm
-    real(8) :: l_omega_tol, dot_tol, tol3
+    real(8) :: l_omega_tol, dot_tol, cross_tol, tol3
     logical :: dot1, dot2, dot3, dot4
+    logical :: cross1, cross2
     logical :: condition1, condition3, all_conditions
-    logical :: x_condition, y_condition, z_condition, neighbor_conditions
+    logical :: x_dot_condition, y_dot_condition, z_dot_condition
+    logical :: x_cross_condition, y_cross_condition, z_cross_condition
+    logical :: x_condition, y_condition, z_condition
+    logical :: neighbor_conditions
     integer :: imax, jmax, kmax, nx
     integer :: i, j, k
     integer :: l_core_counter
@@ -200,8 +207,9 @@ program main
         !! Apply conditions for liutex core vector
 
         l_omega_tol = 0.51d0    !! tolerance for condition 1
-        dot_tol = 1.d-6         !! tolerance for condition 2
-        tol3 = 1.d-3            !! tolerance for condition 3
+        dot_tol     = 1.d-6         !! tolerance for condition 2
+        cross_tol   = 1.d-6
+        tol3        = 1.d-3            !! tolerance for condition 3
 
         l_core_counter = 0
 
@@ -261,7 +269,7 @@ program main
                         dot3 = (dot_product(lmg_vec, lmg_vec_x3) <= dot_tol)
                         dot4 = (dot_product(lmg_vec, lmg_vec_x4) <= dot_tol)
 
-                        x_condition = dot1 .and. dot2 .and. dot3 .and. dot4
+                        x_dot_condition = dot1 .and. dot2 .and. dot3 .and. dot4
 
                         !! Y-DIRECTION
                         !! Get the neighboring gradient vectors (Going along the y-direction / j-direction).
@@ -294,7 +302,7 @@ program main
                         dot3 = (dot_product(lmg_vec, lmg_vec_y3) <= dot_tol)
                         dot4 = (dot_product(lmg_vec, lmg_vec_y4) <= dot_tol)
 
-                        y_condition = dot1 .and. dot2 .and. dot3 .and. dot4
+                        y_dot_condition = dot1 .and. dot2 .and. dot3 .and. dot4
 
                         !! Z-DIRECTION
                         !! Get the neighboring gradient vectors (Going along the z-direction / k-direction).
@@ -327,11 +335,80 @@ program main
                         dot3 = (dot_product(lmg_vec, lmg_vec_z3) <= dot_tol)
                         dot4 = (dot_product(lmg_vec, lmg_vec_z4) <= dot_tol)
 
-                        z_condition = dot1 .and. dot2 .and. dot3 .and. dot4
+                        z_dot_condition = dot1 .and. dot2 .and. dot3 .and. dot4
+
+                        !! Check to see if the gradient of the nodes in the axis direction
+                        !! are parallel. (e.g. v cross w = 0)
+
+                        !! X-DIRECTION
+                        !! Create neighboring vectors in the axis direction
+                        lmg_axis_x1 = (/ l_mag_gradient(i-1,j,k,1), l_mag_gradient(i-1,j,k,2), l_mag_gradient(i-1,j,k,3) /)
+                        lmg_axis_x2 = (/ l_mag_gradient(i+1,j,k,1), l_mag_gradient(i+1,j,k,2), l_mag_gradient(i+1,j,k,3) /)
+                        
+                        !! Normalize vectors
+                        if (norm2(lmg_axis_x1) .ne. 0.d0) then
+                            lmg_axis_x1 = lmg_axis_x1 / norm2(lmg_axis_x1)
+                        end if
+
+                        if (norm2(lmg_axis_x2) .ne. 0.d0) then
+                            lmg_axis_x2 = lmg_axis_x2 / norm2(lmg_axis_x2)
+                        end if
+
+                        !! Check if cross product is close to 0
+                        cross1 = (norm2(cross_product_3d(lmg_vec, lmg_axis_x1)) <= cross_tol)
+                        cross2 = (norm2(cross_product_3d(lmg_vec, lmg_axis_x2)) <= cross_tol)
+                        
+                        x_cross_condition = cross1 .and. cross2
+
+                        !! Y-DIRECTION
+                        !! Create neighboring vectors in the axis direction
+                        lmg_axis_y1 = (/ l_mag_gradient(i,j-1,k,1), l_mag_gradient(i,j-1,k,2), l_mag_gradient(i,j-1,k,3) /)
+                        lmg_axis_y2 = (/ l_mag_gradient(i,j+1,k,1), l_mag_gradient(i,j+1,k,2), l_mag_gradient(i,j+1,k,3) /)
+                        
+                        !! Normalize vectors
+                        if (norm2(lmg_axis_y1) .ne. 0.d0) then
+                            lmg_axis_y1 = lmg_axis_y1 / norm2(lmg_axis_y1)
+                        end if
+
+                        if (norm2(lmg_axis_y2) .ne. 0.d0) then
+                            lmg_axis_y2 = lmg_axis_y2 / norm2(lmg_axis_y2)
+                        end if
+
+                        !! Check if cross product is close to 0
+                        cross1 = (norm2(cross_product_3d(lmg_vec, lmg_axis_y1)) <= cross_tol)
+                        cross2 = (norm2(cross_product_3d(lmg_vec, lmg_axis_y2)) <= cross_tol)
+                        
+                        y_cross_condition = cross1 .and. cross2
+
+                        !! Z-DIRECTION
+                        !! Create neighboring vectors in the axis direction
+                        lmg_axis_z1 = (/ l_mag_gradient(i,j,k-1,1), l_mag_gradient(i,j,k-1,2), l_mag_gradient(i,j,k-1,3) /)
+                        lmg_axis_z2 = (/ l_mag_gradient(i,j,k+1,1), l_mag_gradient(i,j,k+1,2), l_mag_gradient(i,j,k+1,3) /)
+                        
+                        !! Normalize vectors
+                        if (norm2(lmg_axis_z1) .ne. 0.d0) then
+                            lmg_axis_z1 = lmg_axis_z1 / norm2(lmg_axis_z1)
+                        end if
+
+                        if (norm2(lmg_axis_z2) .ne. 0.d0) then
+                            lmg_axis_z2 = lmg_axis_z2 / norm2(lmg_axis_z2)
+                        end if
+
+                        !! Check if cross product is close to 0
+                        cross1 = (norm2(cross_product_3d(lmg_vec, lmg_axis_z1)) <= cross_tol)
+                        cross2 = (norm2(cross_product_3d(lmg_vec, lmg_axis_z2)) <= cross_tol)
+                        
+                        z_cross_condition = cross1 .and. cross2
 
                         !! Checking all the conditions
+                        !! Grouping the direction conditions together
+                        x_condition = x_dot_condition .and. x_cross_condition
+                        y_condition = y_dot_condition .and. y_cross_condition
+                        z_condition = z_dot_condition .and. z_cross_condition
+
                         neighbor_conditions = x_condition .or. y_condition .or. z_condition
 
+                        !! Third condition, liutex cross lmg = 0.
                         condition3 = (norm2(cross_product_3d(r_vec, lmg_vec)) <= tol3)
 
                         all_conditions = neighbor_conditions .and. condition3
