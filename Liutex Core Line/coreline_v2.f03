@@ -39,7 +39,7 @@ program main
     real(8) :: lmg_norm, r_norm
     real(8) :: l_omega_tol, dot_tol, tol3
     logical :: dot1, dot2, dot3, dot4
-    logical :: condition1
+    logical :: condition1, condition3, all_conditions
     logical :: x_condition, y_condition, z_condition, neighbor_conditions
     integer :: imax, jmax, kmax, nx
     integer :: i, j, k
@@ -332,7 +332,11 @@ program main
                         !! Checking all the conditions
                         neighbor_conditions = x_condition .or. y_condition .or. z_condition
 
-                        if (neighbor_conditions) then
+                        condition3 = (norm2(cross_product_3d(r_vec, lmg_vec)) <= tol3)
+
+                        all_conditions = neighbor_conditions .and. condition3
+
+                        if (all_conditions) then
 
                             !! Liutex Core Line (l_core) vector components
                             l_core_x(i,j,k) = l_mag(i,j,k) * lmg_vec(1)
