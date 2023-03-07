@@ -33,9 +33,14 @@ program main
     real(8), dimension(:,:,:), allocatable :: l_mag, omega_l
     real(8), dimension(:,:,:), allocatable :: l_core_x, l_core_y, l_core_z
     real(8), dimension(3) :: lmg_vec, r_vec
+    real(8), dimension(3) :: lmg_vec_x1, lmg_vec_x2, lmg_vec_x3, lmg_vec_x4
+    real(8), dimension(3) :: lmg_vec_y1, lmg_vec_y2, lmg_vec_y3, lmg_vec_y4
+    real(8), dimension(3) :: lmg_vec_z1, lmg_vec_z2, lmg_vec_z3, lmg_vec_z4
     real(8) :: lmg_norm, r_norm
-    real(8) :: tol1, tol2, tol3
-    logical :: condition1, condition2, condition3, all_conditions
+    real(8) :: l_omega_tol, dot_tol, tol3
+    logical :: dot1, dot2, dot3, dot4
+    logical :: condition1
+    logical :: x_condition, y_condition, z_condition, neighbor_conditions
     integer :: imax, jmax, kmax, nx
     integer :: i, j, k
     integer :: l_core_counter
@@ -194,17 +199,17 @@ program main
 
         !! Apply conditions for liutex core vector
 
-        tol1 = 0.51d0   !! tolerance for condition 1
-        tol2 = 1.d-6    !! tolerance for condition 2
-        tol3 = 1.d-3    !! tolerance for condition 3
+        l_omega_tol = 0.51d0    !! tolerance for condition 1
+        dot_tol = 1.d-6         !! tolerance for condition 2
+        tol3 = 1.d-3            !! tolerance for condition 3
 
         l_core_counter = 0
 
-        do k = 1, kmax
-            do j = 1, jmax
-                do i = 1, imax
+        do k = 2, kmax - 1
+            do j = 2, jmax - 1
+                do i = 2, imax - 1
 
-                    condition1 = (omega_l(i,j,k) >= tol1)
+                    condition1 = (omega_l(i,j,k) >= l_omega_tol)
                     
                     if (condition1) then
 
@@ -222,14 +227,112 @@ program main
                             r_vec = r_vec / r_norm
                         end if
 
-                        !! Conditions
-                        condition2 = (lmg_norm <= tol2)
+                        !! Check neighboring gradient vectors to see if they are perpendicular
+                        !! to the current node's gradient vector.
                         
-                        condition3 = (norm2(cross_product_3d(r_vec, lmg_vec)) <= tol3)
-                        
-                        all_conditions = condition2 .and. condition3
+                        !! X-DIRECTION
+                        !! Get the neighboring gradient vectors (Going along the x-direction / i-direction).
+                        lmg_vec_x1 = (/ l_mag_gradient(i,j-1,k,1), l_mag_gradient(i,j-1,k,2), l_mag_gradient(i,j-1,k,3) /)
+                        lmg_vec_x2 = (/ l_mag_gradient(i,j+1,k,1), l_mag_gradient(i,j+1,k,2), l_mag_gradient(i,j+1,k,3) /)
+                        lmg_vec_x3 = (/ l_mag_gradient(i,j,k-1,1), l_mag_gradient(i,j,k-1,2), l_mag_gradient(i,j,k-1,3) /)
+                        lmg_vec_x4 = (/ l_mag_gradient(i,j,k+1,1), l_mag_gradient(i,j,k+1,2), l_mag_gradient(i,j,k+1,3) /)
 
-                        if (all_conditions) then
+                        !! Normalize the neighbors
+                        if (norm2(lmg_vec_x1) .ne. 0.d0) then
+                            lmg_vec_x1 = lmg_vec_x1 / norm2(lmg_vec_x1)
+                        end if
+                        
+                        if (norm2(lmg_vec_x2) .ne. 0.d0) then
+                            lmg_vec_x2 = lmg_vec_x2 / norm2(lmg_vec_x2)
+                        end if
+                        
+                        if (norm2(lmg_vec_x3) .ne. 0.d0) then
+                            lmg_vec_x3 = lmg_vec_x3 / norm2(lmg_vec_x3)
+                        end if
+                        
+                        if (norm2(lmg_vec_x4) .ne. 0.d0) then
+                            lmg_vec_x4 = lmg_vec_x4 / norm2(lmg_vec_x4)
+                        end if
+
+                        !! Use dot product to determine if the neighboring nodes are perpendicular
+                        !! i.e. if v dot w = 0 then v and w are perpendicular.
+                        dot1 = (dot_product(lmg_vec, lmg_vec_x1) <= dot_tol)
+                        dot2 = (dot_product(lmg_vec, lmg_vec_x2) <= dot_tol)
+                        dot3 = (dot_product(lmg_vec, lmg_vec_x3) <= dot_tol)
+                        dot4 = (dot_product(lmg_vec, lmg_vec_x4) <= dot_tol)
+
+                        x_condition = dot1 .and. dot2 .and. dot3 .and. dot4
+
+                        !! Y-DIRECTION
+                        !! Get the neighboring gradient vectors (Going along the y-direction / j-direction).
+                        lmg_vec_y1 = (/ l_mag_gradient(i-1,j,k,1), l_mag_gradient(i-1,j,k,2), l_mag_gradient(i-1,j,k,3) /)
+                        lmg_vec_y2 = (/ l_mag_gradient(i+1,j,k,1), l_mag_gradient(i+1,j,k,2), l_mag_gradient(i+1,j,k,3) /)
+                        lmg_vec_y3 = (/ l_mag_gradient(i,j,k-1,1), l_mag_gradient(i,j,k-1,2), l_mag_gradient(i,j,k-1,3) /)
+                        lmg_vec_y4 = (/ l_mag_gradient(i,j,k+1,1), l_mag_gradient(i,j,k+1,2), l_mag_gradient(i,j,k+1,3) /)
+
+                        !! Normalize the neighbors
+                        if (norm2(lmg_vec_y1) .ne. 0.d0) then
+                            lmg_vec_y1 = lmg_vec_y1 / norm2(lmg_vec_y1)
+                        end if
+                        
+                        if (norm2(lmg_vec_y2) .ne. 0.d0) then
+                            lmg_vec_y2 = lmg_vec_y2 / norm2(lmg_vec_y2)
+                        end if
+                        
+                        if (norm2(lmg_vec_y3) .ne. 0.d0) then
+                            lmg_vec_y3 = lmg_vec_y3 / norm2(lmg_vec_y3)
+                        end if
+                        
+                        if (norm2(lmg_vec_y4) .ne. 0.d0) then
+                            lmg_vec_y4 = lmg_vec_y4 / norm2(lmg_vec_y4)
+                        end if
+
+                        !! Use dot product to determine if the neighboring nodes are perpendicular
+                        !! i.e. if v dot w = 0 then v and w are perpendicular.
+                        dot1 = (dot_product(lmg_vec, lmg_vec_y1) <= dot_tol)
+                        dot2 = (dot_product(lmg_vec, lmg_vec_y2) <= dot_tol)
+                        dot3 = (dot_product(lmg_vec, lmg_vec_y3) <= dot_tol)
+                        dot4 = (dot_product(lmg_vec, lmg_vec_y4) <= dot_tol)
+
+                        y_condition = dot1 .and. dot2 .and. dot3 .and. dot4
+
+                        !! Z-DIRECTION
+                        !! Get the neighboring gradient vectors (Going along the z-direction / k-direction).
+                        lmg_vec_z1 = (/ l_mag_gradient(i-1,j,k,1), l_mag_gradient(i-1,j,k,2), l_mag_gradient(i-1,j,k,3) /)
+                        lmg_vec_z2 = (/ l_mag_gradient(i+1,j,k,1), l_mag_gradient(i+1,j,k,2), l_mag_gradient(i+1,j,k,3) /)
+                        lmg_vec_z3 = (/ l_mag_gradient(i,j-1,k,1), l_mag_gradient(i,j-1,k,2), l_mag_gradient(i,j-1,k,3) /)
+                        lmg_vec_z4 = (/ l_mag_gradient(i,j+1,k,1), l_mag_gradient(i,j+1,k,2), l_mag_gradient(i,j+1,k,3) /)
+
+                        !! Normalize the neighbors
+                        if (norm2(lmg_vec_z1) .ne. 0.d0) then
+                            lmg_vec_z1 = lmg_vec_z1 / norm2(lmg_vec_z1)
+                        end if
+                        
+                        if (norm2(lmg_vec_z2) .ne. 0.d0) then
+                            lmg_vec_z2 = lmg_vec_z2 / norm2(lmg_vec_z2)
+                        end if
+                        
+                        if (norm2(lmg_vec_z3) .ne. 0.d0) then
+                            lmg_vec_z3 = lmg_vec_z3 / norm2(lmg_vec_z3)
+                        end if
+                        
+                        if (norm2(lmg_vec_z4) .ne. 0.d0) then
+                            lmg_vec_z4 = lmg_vec_z4 / norm2(lmg_vec_z4)
+                        end if
+
+                        !! Use dot product to determine if the neighboring nodes are perpendicular
+                        !! i.e. if v dot w = 0 then v and w are perpendicular.
+                        dot1 = (dot_product(lmg_vec, lmg_vec_z1) <= dot_tol)
+                        dot2 = (dot_product(lmg_vec, lmg_vec_z2) <= dot_tol)
+                        dot3 = (dot_product(lmg_vec, lmg_vec_z3) <= dot_tol)
+                        dot4 = (dot_product(lmg_vec, lmg_vec_z4) <= dot_tol)
+
+                        z_condition = dot1 .and. dot2 .and. dot3 .and. dot4
+
+                        !! Checking all the conditions
+                        neighbor_conditions = x_condition .and. y_condition .and. z_condition
+
+                        if (neighbor_conditions) then
 
                             !! Liutex Core Line (l_core) vector components
                             l_core_x(i,j,k) = l_mag(i,j,k) * lmg_vec(1)
@@ -239,7 +342,7 @@ program main
                             l_core_counter = l_core_counter + 1
 
                             !! Write liutex core points to file
-                            write(fout1) x(i,j,k), y(i,j,k), z(i,j,k)
+                            write(fout1,*) x(i,j,k), y(i,j,k), z(i,j,k)
 
                         end if
 

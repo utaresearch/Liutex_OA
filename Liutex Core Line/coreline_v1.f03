@@ -239,7 +239,7 @@ program main
                                 l_core_counter = l_core_counter + 1
     
                                 !! Write liutex core points to file
-                                write(fout1) x(i,j,k), y(i,j,k), z(i,j,k)
+                                write(fout1,*) x(i,j,k), y(i,j,k), z(i,j,k)
     
                             end if
     
