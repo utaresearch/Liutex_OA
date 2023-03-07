@@ -330,7 +330,7 @@ program main
                         z_condition = dot1 .and. dot2 .and. dot3 .and. dot4
 
                         !! Checking all the conditions
-                        neighbor_conditions = x_condition .and. y_condition .and. z_condition
+                        neighbor_conditions = x_condition .or. y_condition .or. z_condition
 
                         if (neighbor_conditions) then
 
