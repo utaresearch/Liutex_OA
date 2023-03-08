@@ -1156,7 +1156,7 @@ program DNSUTA_extract
 
     call cpu_time(t5)
 
-    open(18, file='RortexZDZpoints.txt')
+    ! open(18, file='RortexZDZpoints.txt')
 
     do k = 1, kmax_local
       do j = 1, jmax_local
@@ -1331,13 +1331,13 @@ program DNSUTA_extract
         endif
 
 
-        if(isLocExtrOmg(i,j,k).eq. 1.0) then
+        ! if(isLocExtrOmg(i,j,k).eq. 1.0) then
 
-            write(18,"(3(f21.12))") x(i+istart-1, j+jstart-1, k+kstart-1),  &
-                y(i+istart-1, j+jstart-1, k+kstart-1),  &
-                z(i+istart-1, j+jstart-1, k+kstart-1)
+        !     write(18,"(3(f21.12))") x(i+istart-1, j+jstart-1, k+kstart-1),  &
+        !         y(i+istart-1, j+jstart-1, k+kstart-1),  &
+        !         z(i+istart-1, j+jstart-1, k+kstart-1)
 
-        end if
+        ! end if
 
          ljmtmp=sqrt((rortex_mag_y(i,j,k)*rortex_z(i,j,k)-rortex_mag_z(i,j,k)*rortex_y(i,j,k))**2 &
               +(rortex_mag_z(i,j,k)*rortex_x(i,j,k)-rortex_mag_x(i,j,k)*rortex_z(i,j,k))**2 &
@@ -1605,7 +1605,7 @@ program DNSUTA_extract
                                     nx=1,nvar)
 
     close(fin1)
-    close(18)
+    ! close(18)
 
     deallocate(f)
 
