@@ -28,28 +28,20 @@ program main
 
     !! Other stuff
     real(8), dimension(:,:,:,:), allocatable :: f, f2
-    real(8), dimension(:,:,:,:), allocatable :: r, lmg
+    real(8), dimension(:,:,:,:), allocatable :: r, l_mag_gradient
     real(8), dimension(:,:,:), allocatable :: x, y, z
     real(8), dimension(:,:,:), allocatable :: l_mag, omega_l
     real(8), dimension(:,:,:), allocatable :: l_core_x, l_core_y, l_core_z
-    real(8), dimension(:,:,:), allocatable :: div_lmg
     real(8), dimension(3) :: lmg_vec, r_vec
-    real(8), dimension(3) :: lmg_vec_x1, lmg_vec_x2, lmg_vec_x3, lmg_vec_x4
-    real(8), dimension(3) :: lmg_vec_y1, lmg_vec_y2, lmg_vec_y3, lmg_vec_y4
-    real(8), dimension(3) :: lmg_vec_z1, lmg_vec_z2, lmg_vec_z3, lmg_vec_z4
-    real(8), dimension(3) :: lmg_axis_x1, lmg_axis_x2
-    real(8), dimension(3) :: lmg_axis_y1, lmg_axis_y2
-    real(8), dimension(3) :: lmg_axis_z1, lmg_axis_z2 
+    real(8), dimension(3) :: lmg_vec_x1, lmg_vec_x2, lmg_vec_x3, lmg_vec_x4, lmg_vec_x5, lmg_vec_x6, lmg_vec_x7, lmg_vec_x8
+    real(8), dimension(3) :: lmg_vec_y1, lmg_vec_y2, lmg_vec_y3, lmg_vec_y4, lmg_vec_y5, lmg_vec_y6, lmg_vec_y7, lmg_vec_y8
+    real(8), dimension(3) :: lmg_vec_z1, lmg_vec_z2, lmg_vec_z3, lmg_vec_z4, lmg_vec_z5, lmg_vec_z6, lmg_vec_z7, lmg_vec_z8
+    real(8), dimension(3) :: lmg_avg_x
     real(8) :: lmg_norm, r_norm
-    real(8) :: l_omega_tol, dot_tol, cross_tol, div_tol, lmg_norm_tol, tol3
+    real(8) :: l_omega_tol, dot_tol, tol3
     logical :: dot1, dot2, dot3, dot4
-    logical :: cross1, cross2
     logical :: condition1, condition3, all_conditions
-    logical :: x_dot_condition, y_dot_condition, z_dot_condition
-    logical :: x_cross_condition, y_cross_condition, z_cross_condition
-    logical :: x_condition, y_condition, z_condition
-    logical :: neighbor_conditions
-    logical :: div_condition
+    logical :: x_condition, y_condition, z_condition, neighbor_conditions
     integer :: imax, jmax, kmax, nx
     integer :: i, j, k, s
     integer :: l_core_counter
@@ -185,12 +177,12 @@ program main
 
         allocate(r(imax,jmax,kmax,3))
         allocate(l_mag(imax,jmax,kmax))
-        allocate(lmg(imax,jmax,kmax,3))
+        allocate(l_mag_gradient(imax,jmax,kmax,3))
         allocate(omega_l(imax,jmax,kmax))
 
         r(:,:,:,:) = f(:,:,:, 8:10)
         l_mag = f(:,:,:, 11)
-        lmg(:,:,:,:) = f(:,:,:, 14:16)
+        l_mag_gradient(:,:,:,:) = f(:,:,:, 14:16)
         omega_l = f(:,:,:, 17)
         
         allocate(l_core_x(imax,jmax,kmax))   !! New Liutex Core Vector
@@ -206,24 +198,11 @@ program main
         l_core_y = 0.d0
         l_core_z = 0.d0
 
-        !! Calculate divergence
-        allocate(div_lmg(imax,jmax,kmax))
-
-        div_lmg = divergence(lmg(:,:,:,1), lmg(:,:,:,2), lmg(:,:,:,3), x, y, z, imax, jmax, kmax)
-
         !! Apply conditions for liutex core vector
 
         l_omega_tol = 0.51d0    !! tolerance for condition 1
-<<<<<<< HEAD:Liutex Core Line/coreline_v2.f08
-        dot_tol     = 1.d-9         !! tolerance for condition 2
-        cross_tol   = 1.d-9
-        ! div_tol     = 1.d0
-        lmg_norm_tol= 1.d-9
-        tol3        = 1.d-9            !! tolerance for condition 3
-=======
-        dot_tol = 1.d-8         !! tolerance for condition 2
-        tol3 = 1.d-8         !! tolerance for condition 3
->>>>>>> ecd4a2f (started original method in v3):Liutex Core Line/coreline_v2.f03
+        dot_tol = 1.d-6         !! tolerance for condition 2
+        tol3 = 1.d-3            !! tolerance for condition 3
 
         l_core_counter = 0
 
@@ -235,7 +214,7 @@ program main
                     
                     if (condition1) then
 
-                        lmg_vec = (/ lmg(i,j,k,1), lmg(i,j,k,2), lmg(i,j,k,3) /)
+                        lmg_vec = (/ l_mag_gradient(i,j,k,1), l_mag_gradient(i,j,k,2), l_mag_gradient(i,j,k,3) /)
                         r_vec = (/ r(i,j,k,1), r(i,j,k,2), r(i,j,k,3) /)
 
                         lmg_norm = norm2(lmg_vec)
@@ -249,26 +228,20 @@ program main
                             r_vec = r_vec / r_norm
                         end if
 
-<<<<<<< HEAD:Liutex Core Line/coreline_v2.f08
-                        !! Check neighboring gradient vectors to see if they are parallel
-                        !! to the current node's gradient vector.
+                        !! Taking average of neighboring vectors and comparing them to the original.
+                        !! Condition: if the average is = or similar to original then it is a core point.
                         
                         !! X-DIRECTION
                         !! Get the neighboring gradient vectors (Going along the x-direction / i-direction).
-                        lmg_vec_x1 = (/ lmg(i,j-1,k,1), lmg(i,j-1,k,2), lmg(i,j-1,k,3) /)
-                        lmg_vec_x2 = (/ lmg(i,j+1,k,1), lmg(i,j+1,k,2), lmg(i,j+1,k,3) /)
-                        lmg_vec_x3 = (/ lmg(i,j,k-1,1), lmg(i,j,k-1,2), lmg(i,j,k-1,3) /)
-                        lmg_vec_x4 = (/ lmg(i,j,k+1,1), lmg(i,j,k+1,2), lmg(i,j,k+1,3) /)
-=======
-                        !! Finding if neighboring gradient vectors are parallel to the current gradient vector.
-                        
-                        !! X-DIRECTION
-                        !! Get the neighboring gradient vectors (Going along the x-direction / i-direction).
-                        lmg_vec_x1 = (/ l_mag_gradient(i-1,j,k,1), l_mag_gradient(i-1,j,k,2), l_mag_gradient(i-1,j,k,3) /)
-                        lmg_vec_x2 = (/ l_mag_gradient(i+1,j,k,1), l_mag_gradient(i+1,j,k,2), l_mag_gradient(i+1,j,k,3) /)
-                        lmg_vec_x3 = (/ l_mag_gradient(i,j-1,k,1), l_mag_gradient(i,j-1,k,2), l_mag_gradient(i,j-1,k,3) /)
-                        lmg_vec_x4 = (/ l_mag_gradient(i,j+1,k,1), l_mag_gradient(i,j+1,k,2), l_mag_gradient(i,j+1,k,3) /)
->>>>>>> ecd4a2f (started original method in v3):Liutex Core Line/coreline_v2.f03
+                        lmg_vec_x1 = (/ l_mag_gradient(i,j-2,k,1), l_mag_gradient(i,j-2,k,2), l_mag_gradient(i,j-2,k,3) /)
+                        lmg_vec_x2 = (/ l_mag_gradient(i,j-1,k,1), l_mag_gradient(i,j-1,k,2), l_mag_gradient(i,j-1,k,3) /)
+                        lmg_vec_x3 = (/ l_mag_gradient(i,j+1,k,1), l_mag_gradient(i,j+1,k,2), l_mag_gradient(i,j+1,k,3) /)
+                        lmg_vec_x4 = (/ l_mag_gradient(i,j+2,k,1), l_mag_gradient(i,j+2,k,2), l_mag_gradient(i,j+2,k,3) /)
+
+                        lmg_vec_x5 = (/ l_mag_gradient(i,j,k-2,1), l_mag_gradient(i,j,k-2,2), l_mag_gradient(i,j,k-2,3) /)
+                        lmg_vec_x6 = (/ l_mag_gradient(i,j,k-1,1), l_mag_gradient(i,j,k-1,2), l_mag_gradient(i,j,k-1,3) /)
+                        lmg_vec_x7 = (/ l_mag_gradient(i,j,k+1,1), l_mag_gradient(i,j,k+1,2), l_mag_gradient(i,j,k+1,3) /)
+                        lmg_vec_x8 = (/ l_mag_gradient(i,j,k+2,1), l_mag_gradient(i,j,k+2,2), l_mag_gradient(i,j,k+2,3) /)
 
                         !! Normalize the neighbors
                         if (norm2(lmg_vec_x1) .ne. 0.d0) then
@@ -287,34 +260,38 @@ program main
                             lmg_vec_x4 = lmg_vec_x4 / norm2(lmg_vec_x4)
                         end if
 
-<<<<<<< HEAD:Liutex Core Line/coreline_v2.f08
-                        !! Use cross product to determine if the neighboring nodes are parallel
-                        !! i.e. if v cross w = 0 then v and w are parallel.
-                        dot1 = (norm2(cross_product_3d(lmg_vec, lmg_vec_x1)) <= cross_tol)
-                        dot2 = (norm2(cross_product_3d(lmg_vec, lmg_vec_x2)) <= cross_tol)
-                        dot3 = (norm2(cross_product_3d(lmg_vec, lmg_vec_x3)) <= cross_tol)
-                        dot4 = (norm2(cross_product_3d(lmg_vec, lmg_vec_x4)) <= cross_tol)
+                        if (norm2(lmg_vec_x5) .ne. 0.d0) then
+                            lmg_vec_x5 = lmg_vec_x5 / norm2(lmg_vec_x5)
+                        end if
+                        
+                        if (norm2(lmg_vec_x6) .ne. 0.d0) then
+                            lmg_vec_x6 = lmg_vec_x6 / norm2(lmg_vec_x6)
+                        end if
+                        
+                        if (norm2(lmg_vec_x7) .ne. 0.d0) then
+                            lmg_vec_x7 = lmg_vec_x7 / norm2(lmg_vec_x7)
+                        end if
+                        
+                        if (norm2(lmg_vec_x8) .ne. 0.d0) then
+                            lmg_vec_x8 = lmg_vec_x8 / norm2(lmg_vec_x8)
+                        end if
 
-                        x_dot_condition = dot1 .and. dot2 .and. dot3 .and. dot4
+                        do s = 1, 3
+                            lmg_avg_x(s) = lmg_vec_x1(s) + lmg_vec_x2(s) + lmg_vec_x3(s) + lmg_vec_x4(s)    &
+                                         + lmg_vec_x5(s) + lmg_vec_x6(s) + lmg_vec_x7(s) + lmg_vec_x8(s)
+                            
+                            lmg_avg_x(s) = lmg_avg_x(s) / 8.d0
+                        end do
 
-=======
-                        !! Use dot product to determine if the neighboring nodes are perpendicular
-                        !! i.e. if v dot w = 0 then v and w are perpendicular.
-                        dot1 = (abs(dot_product(lmg_vec, lmg_vec_x1)) <= dot_tol)
-                        dot2 = (abs(dot_product(lmg_vec, lmg_vec_x2)) <= dot_tol)
-                        dot3 = (abs(dot_product(lmg_vec, lmg_vec_x3)) <= dot_tol)
-                        dot4 = (abs(dot_product(lmg_vec, lmg_vec_x4)) <= dot_tol)
-
-                        x_condition = dot1 .and. dot2 .and. dot3 .and. dot4
+                        x_condition = (abs(dot_product(lmg_vec, lmg_avg_x)) <= dot_tol)
                         
                         
->>>>>>> ecd4a2f (started original method in v3):Liutex Core Line/coreline_v2.f03
                         !! Y-DIRECTION
                         !! Get the neighboring gradient vectors (Going along the y-direction / j-direction).
-                        lmg_vec_y1 = (/ lmg(i-1,j,k,1), lmg(i-1,j,k,2), lmg(i-1,j,k,3) /)
-                        lmg_vec_y2 = (/ lmg(i+1,j,k,1), lmg(i+1,j,k,2), lmg(i+1,j,k,3) /)
-                        lmg_vec_y3 = (/ lmg(i,j,k-1,1), lmg(i,j,k-1,2), lmg(i,j,k-1,3) /)
-                        lmg_vec_y4 = (/ lmg(i,j,k+1,1), lmg(i,j,k+1,2), lmg(i,j,k+1,3) /)
+                        lmg_vec_y1 = (/ l_mag_gradient(i-1,j,k,1), l_mag_gradient(i-1,j,k,2), l_mag_gradient(i-1,j,k,3) /)
+                        lmg_vec_y2 = (/ l_mag_gradient(i+1,j,k,1), l_mag_gradient(i+1,j,k,2), l_mag_gradient(i+1,j,k,3) /)
+                        lmg_vec_y3 = (/ l_mag_gradient(i,j,k-1,1), l_mag_gradient(i,j,k-1,2), l_mag_gradient(i,j,k-1,3) /)
+                        lmg_vec_y4 = (/ l_mag_gradient(i,j,k+1,1), l_mag_gradient(i,j,k+1,2), l_mag_gradient(i,j,k+1,3) /)
 
                         !! Normalize the neighbors
                         if (norm2(lmg_vec_y1) .ne. 0.d0) then
@@ -333,30 +310,21 @@ program main
                             lmg_vec_y4 = lmg_vec_y4 / norm2(lmg_vec_y4)
                         end if
 
-<<<<<<< HEAD:Liutex Core Line/coreline_v2.f08
-                        !! Use cross product to determine if the neighboring nodes are parallel
-                        !! i.e. if v cross w = 0 then v and w are parallel.
-                        dot1 = (norm2(cross_product_3d(lmg_vec, lmg_vec_y1)) <= cross_tol)
-                        dot2 = (norm2(cross_product_3d(lmg_vec, lmg_vec_y2)) <= cross_tol)
-                        dot3 = (norm2(cross_product_3d(lmg_vec, lmg_vec_y3)) <= cross_tol)
-                        dot4 = (norm2(cross_product_3d(lmg_vec, lmg_vec_y4)) <= cross_tol)
-=======
                         !! Use dot product to determine if the neighboring nodes are perpendicular
                         !! i.e. if v dot w = 0 then v and w are perpendicular.
-                        dot1 = (abs(dot_product(lmg_vec, lmg_vec_y1)) <= dot_tol)
-                        dot2 = (abs(dot_product(lmg_vec, lmg_vec_y2)) <= dot_tol)
-                        dot3 = (abs(dot_product(lmg_vec, lmg_vec_y3)) <= dot_tol)
-                        dot4 = (abs(dot_product(lmg_vec, lmg_vec_y4)) <= dot_tol)
->>>>>>> ecd4a2f (started original method in v3):Liutex Core Line/coreline_v2.f03
+                        dot1 = (dot_product(lmg_vec, lmg_vec_y1) <= dot_tol)
+                        dot2 = (dot_product(lmg_vec, lmg_vec_y2) <= dot_tol)
+                        dot3 = (dot_product(lmg_vec, lmg_vec_y3) <= dot_tol)
+                        dot4 = (dot_product(lmg_vec, lmg_vec_y4) <= dot_tol)
 
-                        y_dot_condition = dot1 .and. dot2 .and. dot3 .and. dot4
+                        y_condition = dot1 .and. dot2 .and. dot3 .and. dot4
 
                         !! Z-DIRECTION
                         !! Get the neighboring gradient vectors (Going along the z-direction / k-direction).
-                        lmg_vec_z1 = (/ lmg(i-1,j,k,1), lmg(i-1,j,k,2), lmg(i-1,j,k,3) /)
-                        lmg_vec_z2 = (/ lmg(i+1,j,k,1), lmg(i+1,j,k,2), lmg(i+1,j,k,3) /)
-                        lmg_vec_z3 = (/ lmg(i,j-1,k,1), lmg(i,j-1,k,2), lmg(i,j-1,k,3) /)
-                        lmg_vec_z4 = (/ lmg(i,j+1,k,1), lmg(i,j+1,k,2), lmg(i,j+1,k,3) /)
+                        lmg_vec_z1 = (/ l_mag_gradient(i-1,j,k,1), l_mag_gradient(i-1,j,k,2), l_mag_gradient(i-1,j,k,3) /)
+                        lmg_vec_z2 = (/ l_mag_gradient(i+1,j,k,1), l_mag_gradient(i+1,j,k,2), l_mag_gradient(i+1,j,k,3) /)
+                        lmg_vec_z3 = (/ l_mag_gradient(i,j-1,k,1), l_mag_gradient(i,j-1,k,2), l_mag_gradient(i,j-1,k,3) /)
+                        lmg_vec_z4 = (/ l_mag_gradient(i,j+1,k,1), l_mag_gradient(i,j+1,k,2), l_mag_gradient(i,j+1,k,3) /)
 
                         !! Normalize the neighbors
                         if (norm2(lmg_vec_z1) .ne. 0.d0) then
@@ -375,105 +343,23 @@ program main
                             lmg_vec_z4 = lmg_vec_z4 / norm2(lmg_vec_z4)
                         end if
 
-<<<<<<< HEAD:Liutex Core Line/coreline_v2.f08
-                        !! Use cross product to determine if the neighboring nodes are parallel
-                        !! i.e. if v cross w = 0 then v and w are parallel.
-                        dot1 = (norm2(cross_product_3d(lmg_vec, lmg_vec_z1)) <= cross_tol)
-                        dot2 = (norm2(cross_product_3d(lmg_vec, lmg_vec_z2)) <= cross_tol)
-                        dot3 = (norm2(cross_product_3d(lmg_vec, lmg_vec_z3)) <= cross_tol)
-                        dot4 = (norm2(cross_product_3d(lmg_vec, lmg_vec_z4)) <= cross_tol)
-=======
                         !! Use dot product to determine if the neighboring nodes are perpendicular
                         !! i.e. if v dot w = 0 then v and w are perpendicular.
-                        dot1 = (abs(dot_product(lmg_vec, lmg_vec_z1)) <= dot_tol)
-                        dot2 = (abs(dot_product(lmg_vec, lmg_vec_z2)) <= dot_tol)
-                        dot3 = (abs(dot_product(lmg_vec, lmg_vec_z3)) <= dot_tol)
-                        dot4 = (abs(dot_product(lmg_vec, lmg_vec_z4)) <= dot_tol)
->>>>>>> ecd4a2f (started original method in v3):Liutex Core Line/coreline_v2.f03
+                        dot1 = (dot_product(lmg_vec, lmg_vec_z1) <= dot_tol)
+                        dot2 = (dot_product(lmg_vec, lmg_vec_z2) <= dot_tol)
+                        dot3 = (dot_product(lmg_vec, lmg_vec_z3) <= dot_tol)
+                        dot4 = (dot_product(lmg_vec, lmg_vec_z4) <= dot_tol)
 
-                        z_dot_condition = dot1 .and. dot2 .and. dot3 .and. dot4
-
-                        !! Check to see if the gradient of the nodes in the axis direction
-                        !! are parallel. (e.g. v cross w = 0)
-
-                        !! X-DIRECTION
-                        !! Create neighboring vectors in the axis direction
-                        lmg_axis_x1 = (/ lmg(i-1,j,k,1), lmg(i-1,j,k,2), lmg(i-1,j,k,3) /)
-                        lmg_axis_x2 = (/ lmg(i+1,j,k,1), lmg(i+1,j,k,2), lmg(i+1,j,k,3) /)
-                        
-                        !! Normalize vectors
-                        if (norm2(lmg_axis_x1) .ne. 0.d0) then
-                            lmg_axis_x1 = lmg_axis_x1 / norm2(lmg_axis_x1)
-                        end if
-
-                        if (norm2(lmg_axis_x2) .ne. 0.d0) then
-                            lmg_axis_x2 = lmg_axis_x2 / norm2(lmg_axis_x2)
-                        end if
-
-                        !! Check if cross product is close to 0
-                        cross1 = (norm2(cross_product_3d(lmg_vec, lmg_axis_x1)) <= cross_tol)
-                        cross2 = (norm2(cross_product_3d(lmg_vec, lmg_axis_x2)) <= cross_tol)
-                        
-                        x_cross_condition = cross1 .and. cross2
-
-                        !! Y-DIRECTION
-                        !! Create neighboring vectors in the axis direction
-                        lmg_axis_y1 = (/ lmg(i,j-1,k,1), lmg(i,j-1,k,2), lmg(i,j-1,k,3) /)
-                        lmg_axis_y2 = (/ lmg(i,j+1,k,1), lmg(i,j+1,k,2), lmg(i,j+1,k,3) /)
-                        
-                        !! Normalize vectors
-                        if (norm2(lmg_axis_y1) .ne. 0.d0) then
-                            lmg_axis_y1 = lmg_axis_y1 / norm2(lmg_axis_y1)
-                        end if
-
-                        if (norm2(lmg_axis_y2) .ne. 0.d0) then
-                            lmg_axis_y2 = lmg_axis_y2 / norm2(lmg_axis_y2)
-                        end if
-
-                        !! Check if cross product is close to 0
-                        cross1 = (norm2(cross_product_3d(lmg_vec, lmg_axis_y1)) <= cross_tol)
-                        cross2 = (norm2(cross_product_3d(lmg_vec, lmg_axis_y2)) <= cross_tol)
-                        
-                        y_cross_condition = cross1 .and. cross2
-
-                        !! Z-DIRECTION
-                        !! Create neighboring vectors in the axis direction
-                        lmg_axis_z1 = (/ lmg(i,j,k-1,1), lmg(i,j,k-1,2), lmg(i,j,k-1,3) /)
-                        lmg_axis_z2 = (/ lmg(i,j,k+1,1), lmg(i,j,k+1,2), lmg(i,j,k+1,3) /)
-                        
-                        !! Normalize vectors
-                        if (norm2(lmg_axis_z1) .ne. 0.d0) then
-                            lmg_axis_z1 = lmg_axis_z1 / norm2(lmg_axis_z1)
-                        end if
-
-                        if (norm2(lmg_axis_z2) .ne. 0.d0) then
-                            lmg_axis_z2 = lmg_axis_z2 / norm2(lmg_axis_z2)
-                        end if
-
-                        !! Check if cross product is close to 0
-                        cross1 = (norm2(cross_product_3d(lmg_vec, lmg_axis_z1)) <= cross_tol)
-                        cross2 = (norm2(cross_product_3d(lmg_vec, lmg_axis_z2)) <= cross_tol)
-                        
-                        z_cross_condition = cross1 .and. cross2
+                        z_condition = dot1 .and. dot2 .and. dot3 .and. dot4
 
                         !! Checking all the conditions
-                        !! Grouping the direction conditions together
-                        x_condition = x_dot_condition .and. x_cross_condition
-                        y_condition = y_dot_condition .and. y_cross_condition
-                        z_condition = z_dot_condition .and. z_cross_condition
+                        neighbor_conditions = x_condition .or. y_condition .or. z_condition
 
-                        neighbor_conditions = (x_condition .neqv. y_condition) .neqv. z_condition
-
-                        !! Check divergence condition
-                        ! div_condition = (abs(div_lmg(i,j,k)) >= div_tol)
-                        div_condition = .true.
-
-                        !! Third condition, liutex cross lmg = 0.
                         condition3 = (norm2(cross_product_3d(r_vec, lmg_vec)) <= tol3)
 
-                        all_conditions = neighbor_conditions .and. div_condition .and. condition3
+                        all_conditions = neighbor_conditions .and. condition3
 
-                        if (all_conditions .and. (lmg_norm <= lmg_norm_tol)) then
+                        if (all_conditions) then
 
                             !! Liutex Core Line (l_core) vector components
                             l_core_x(i,j,k) = l_mag(i,j,k) * lmg_vec(1)
@@ -532,7 +418,7 @@ program main
 
         deallocate(r)
         deallocate(l_mag)
-        deallocate(lmg)
+        deallocate(l_mag_gradient)
         deallocate(omega_l)
         deallocate(l_core_x)
         deallocate(l_core_y)
