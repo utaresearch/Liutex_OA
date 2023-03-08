@@ -214,16 +214,13 @@ program main
         !! Apply conditions for liutex core vector
 
         l_omega_tol = 0.51d0    !! tolerance for condition 1
-<<<<<<< HEAD:Liutex Core Line/coreline_v2.f08
         dot_tol     = 1.d-9         !! tolerance for condition 2
         cross_tol   = 1.d-9
         ! div_tol     = 1.d0
         lmg_norm_tol= 1.d-9
         tol3        = 1.d-9            !! tolerance for condition 3
-=======
         dot_tol = 1.d-8         !! tolerance for condition 2
         tol3 = 1.d-8         !! tolerance for condition 3
->>>>>>> ecd4a2f (started original method in v3):Liutex Core Line/coreline_v2.f03
 
         l_core_counter = 0
 
@@ -249,7 +246,6 @@ program main
                             r_vec = r_vec / r_norm
                         end if
 
-<<<<<<< HEAD:Liutex Core Line/coreline_v2.f08
                         !! Check neighboring gradient vectors to see if they are parallel
                         !! to the current node's gradient vector.
                         
@@ -259,7 +255,6 @@ program main
                         lmg_vec_x2 = (/ lmg(i,j+1,k,1), lmg(i,j+1,k,2), lmg(i,j+1,k,3) /)
                         lmg_vec_x3 = (/ lmg(i,j,k-1,1), lmg(i,j,k-1,2), lmg(i,j,k-1,3) /)
                         lmg_vec_x4 = (/ lmg(i,j,k+1,1), lmg(i,j,k+1,2), lmg(i,j,k+1,3) /)
-=======
                         !! Finding if neighboring gradient vectors are parallel to the current gradient vector.
                         
                         !! X-DIRECTION
@@ -268,7 +263,6 @@ program main
                         lmg_vec_x2 = (/ l_mag_gradient(i+1,j,k,1), l_mag_gradient(i+1,j,k,2), l_mag_gradient(i+1,j,k,3) /)
                         lmg_vec_x3 = (/ l_mag_gradient(i,j-1,k,1), l_mag_gradient(i,j-1,k,2), l_mag_gradient(i,j-1,k,3) /)
                         lmg_vec_x4 = (/ l_mag_gradient(i,j+1,k,1), l_mag_gradient(i,j+1,k,2), l_mag_gradient(i,j+1,k,3) /)
->>>>>>> ecd4a2f (started original method in v3):Liutex Core Line/coreline_v2.f03
 
                         !! Normalize the neighbors
                         if (norm2(lmg_vec_x1) .ne. 0.d0) then
@@ -287,7 +281,6 @@ program main
                             lmg_vec_x4 = lmg_vec_x4 / norm2(lmg_vec_x4)
                         end if
 
-<<<<<<< HEAD:Liutex Core Line/coreline_v2.f08
                         !! Use cross product to determine if the neighboring nodes are parallel
                         !! i.e. if v cross w = 0 then v and w are parallel.
                         dot1 = (norm2(cross_product_3d(lmg_vec, lmg_vec_x1)) <= cross_tol)
@@ -297,7 +290,6 @@ program main
 
                         x_dot_condition = dot1 .and. dot2 .and. dot3 .and. dot4
 
-=======
                         !! Use dot product to determine if the neighboring nodes are perpendicular
                         !! i.e. if v dot w = 0 then v and w are perpendicular.
                         dot1 = (abs(dot_product(lmg_vec, lmg_vec_x1)) <= dot_tol)
@@ -308,7 +300,6 @@ program main
                         x_condition = dot1 .and. dot2 .and. dot3 .and. dot4
                         
                         
->>>>>>> ecd4a2f (started original method in v3):Liutex Core Line/coreline_v2.f03
                         !! Y-DIRECTION
                         !! Get the neighboring gradient vectors (Going along the y-direction / j-direction).
                         lmg_vec_y1 = (/ lmg(i-1,j,k,1), lmg(i-1,j,k,2), lmg(i-1,j,k,3) /)
@@ -333,21 +324,18 @@ program main
                             lmg_vec_y4 = lmg_vec_y4 / norm2(lmg_vec_y4)
                         end if
 
-<<<<<<< HEAD:Liutex Core Line/coreline_v2.f08
                         !! Use cross product to determine if the neighboring nodes are parallel
                         !! i.e. if v cross w = 0 then v and w are parallel.
                         dot1 = (norm2(cross_product_3d(lmg_vec, lmg_vec_y1)) <= cross_tol)
                         dot2 = (norm2(cross_product_3d(lmg_vec, lmg_vec_y2)) <= cross_tol)
                         dot3 = (norm2(cross_product_3d(lmg_vec, lmg_vec_y3)) <= cross_tol)
                         dot4 = (norm2(cross_product_3d(lmg_vec, lmg_vec_y4)) <= cross_tol)
-=======
                         !! Use dot product to determine if the neighboring nodes are perpendicular
                         !! i.e. if v dot w = 0 then v and w are perpendicular.
                         dot1 = (abs(dot_product(lmg_vec, lmg_vec_y1)) <= dot_tol)
                         dot2 = (abs(dot_product(lmg_vec, lmg_vec_y2)) <= dot_tol)
                         dot3 = (abs(dot_product(lmg_vec, lmg_vec_y3)) <= dot_tol)
                         dot4 = (abs(dot_product(lmg_vec, lmg_vec_y4)) <= dot_tol)
->>>>>>> ecd4a2f (started original method in v3):Liutex Core Line/coreline_v2.f03
 
                         y_dot_condition = dot1 .and. dot2 .and. dot3 .and. dot4
 
@@ -375,21 +363,18 @@ program main
                             lmg_vec_z4 = lmg_vec_z4 / norm2(lmg_vec_z4)
                         end if
 
-<<<<<<< HEAD:Liutex Core Line/coreline_v2.f08
                         !! Use cross product to determine if the neighboring nodes are parallel
                         !! i.e. if v cross w = 0 then v and w are parallel.
                         dot1 = (norm2(cross_product_3d(lmg_vec, lmg_vec_z1)) <= cross_tol)
                         dot2 = (norm2(cross_product_3d(lmg_vec, lmg_vec_z2)) <= cross_tol)
                         dot3 = (norm2(cross_product_3d(lmg_vec, lmg_vec_z3)) <= cross_tol)
                         dot4 = (norm2(cross_product_3d(lmg_vec, lmg_vec_z4)) <= cross_tol)
-=======
                         !! Use dot product to determine if the neighboring nodes are perpendicular
                         !! i.e. if v dot w = 0 then v and w are perpendicular.
                         dot1 = (abs(dot_product(lmg_vec, lmg_vec_z1)) <= dot_tol)
                         dot2 = (abs(dot_product(lmg_vec, lmg_vec_z2)) <= dot_tol)
                         dot3 = (abs(dot_product(lmg_vec, lmg_vec_z3)) <= dot_tol)
                         dot4 = (abs(dot_product(lmg_vec, lmg_vec_z4)) <= dot_tol)
->>>>>>> ecd4a2f (started original method in v3):Liutex Core Line/coreline_v2.f03
 
                         z_dot_condition = dot1 .and. dot2 .and. dot3 .and. dot4
 
