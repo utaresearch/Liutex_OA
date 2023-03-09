@@ -2,10 +2,15 @@ program main
 !!!=================================================================================================
 !!! Liutex Core Line generation program.
 !!! 
-!!! First compile module then compile final program, e.g.:
+!!! First compile module:  then compile together, i.e.:
 !!! > gfortran -c liutex_mod.f03
-!!! > gfortran coreline.f03 -o coreline.exe
+!!! 
+!!! Then compile this program:
+!!! > gfortran -c coreline.f03
 !!!
+!!! Then compile the output files (.o) together:
+!!! > gfortran liutex_mod.o coreline.o -o coreline.exe
+!!! 
 !!! By: Oscar Alvarez
 !!!=================================================================================================
     use liutex_mod

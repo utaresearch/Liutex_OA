@@ -255,14 +255,6 @@ program main
                         lmg_vec_x2 = (/ lmg(i,j+1,k,1), lmg(i,j+1,k,2), lmg(i,j+1,k,3) /)
                         lmg_vec_x3 = (/ lmg(i,j,k-1,1), lmg(i,j,k-1,2), lmg(i,j,k-1,3) /)
                         lmg_vec_x4 = (/ lmg(i,j,k+1,1), lmg(i,j,k+1,2), lmg(i,j,k+1,3) /)
-                        !! Finding if neighboring gradient vectors are parallel to the current gradient vector.
-                        
-                        !! X-DIRECTION
-                        !! Get the neighboring gradient vectors (Going along the x-direction / i-direction).
-                        lmg_vec_x1 = (/ l_mag_gradient(i-1,j,k,1), l_mag_gradient(i-1,j,k,2), l_mag_gradient(i-1,j,k,3) /)
-                        lmg_vec_x2 = (/ l_mag_gradient(i+1,j,k,1), l_mag_gradient(i+1,j,k,2), l_mag_gradient(i+1,j,k,3) /)
-                        lmg_vec_x3 = (/ l_mag_gradient(i,j-1,k,1), l_mag_gradient(i,j-1,k,2), l_mag_gradient(i,j-1,k,3) /)
-                        lmg_vec_x4 = (/ l_mag_gradient(i,j+1,k,1), l_mag_gradient(i,j+1,k,2), l_mag_gradient(i,j+1,k,3) /)
 
                         !! Normalize the neighbors
                         if (norm2(lmg_vec_x1) .ne. 0.d0) then
@@ -330,6 +322,7 @@ program main
                         dot2 = (norm2(cross_product_3d(lmg_vec, lmg_vec_y2)) <= cross_tol)
                         dot3 = (norm2(cross_product_3d(lmg_vec, lmg_vec_y3)) <= cross_tol)
                         dot4 = (norm2(cross_product_3d(lmg_vec, lmg_vec_y4)) <= cross_tol)
+                        
                         !! Use dot product to determine if the neighboring nodes are perpendicular
                         !! i.e. if v dot w = 0 then v and w are perpendicular.
                         dot1 = (abs(dot_product(lmg_vec, lmg_vec_y1)) <= dot_tol)
@@ -369,6 +362,7 @@ program main
                         dot2 = (norm2(cross_product_3d(lmg_vec, lmg_vec_z2)) <= cross_tol)
                         dot3 = (norm2(cross_product_3d(lmg_vec, lmg_vec_z3)) <= cross_tol)
                         dot4 = (norm2(cross_product_3d(lmg_vec, lmg_vec_z4)) <= cross_tol)
+                        
                         !! Use dot product to determine if the neighboring nodes are perpendicular
                         !! i.e. if v dot w = 0 then v and w are perpendicular.
                         dot1 = (abs(dot_product(lmg_vec, lmg_vec_z1)) <= dot_tol)
