@@ -19,6 +19,141 @@ module liutex_mod
 
 
     !! Functions
+    function integrate(f_x, f_y, f_z, x, y, z, i, j, k, imax, jmax, kmax) result(big_f)
+        !! Integrates a vector valued function f = (f_x, f_y, f_z) by the method described
+        !! in Fudan paper.
+        implicit none
+        integer, intent(in) :: i, j, k, imax, jmax, kmax
+        real(8), dimension(imax,jmax,kmax), intent(in) :: f_x, f_y, f_z, x, y, z
+        real(8), dimension(imax,jmax,kmax,3) :: big_f
+
+        real(8), dimension(8) :: alpha
+        real(8), dimension(8) :: x_s, y_s, z_s, fx_s, fy_s, fz_s
+        real(8), dimension(3) :: ds
+        real(8), dimension(3) :: interpolated_sum
+        real(8) :: x_i, y_i, z_i
+        real(8) :: fx_i, fy_i, fz_i
+        logical :: x_boundary_stop, y_boundary_stop, z_boundary_stop, boundary_stop
+        logical :: function_value_stop
+        integer :: max_n
+        integer :: n, s
+
+        !! Max number of iterations/generated seed points
+        max_n = 100
+
+        !! Distance to be incremented when interpolating values.
+        ds(1) = (x(i+1,j+1,k+1) - x(i,j,k)) / 10.d0
+        ds(2) = (y(i+1,j+1,k+1) - y(i,j,k)) / 10.d0
+        ds(3) = (z(i+1,j+1,k+1) - z(i,j,k)) / 10.d0
+
+        !! Building Volume control unit. Each index is a vertex of the control unit.
+        x_s(1) = x(i,j,k)
+        x_s(2) = x(i+1,j,k)
+        x_s(3) = x(i+1,j+1,k)
+        x_s(4) = x(i,j+1,k)
+        x_s(5) = x(i,j,k+1)
+        x_s(6) = x(i+1,j,k+1)
+        x_s(7) = x(i+1,j+1,k+1)
+        x_s(8) = x(i,j+1,k+1)
+
+        y_s(1) = y(i,j,k)
+        y_s(2) = y(i+1,j,k)
+        y_s(3) = y(i+1,j+1,k)
+        y_s(4) = y(i,j+1,k)
+        y_s(5) = y(i,j,k+1)
+        y_s(6) = y(i+1,j,k+1)
+        y_s(7) = y(i+1,j+1,k+1)
+        y_s(8) = y(i,j+1,k+1)
+
+        z_s(1) = z(i,j,k)
+        z_s(2) = z(i+1,j,k)
+        z_s(3) = z(i+1,j+1,k)
+        z_s(4) = z(i,j+1,k)
+        z_s(5) = z(i,j,k+1)
+        z_s(6) = z(i+1,j,k+1)
+        z_s(7) = z(i+1,j+1,k+1)
+        z_s(8) = z(i,j+1,k+1)
+
+        fx_s(1) = f_x(i,j,k)
+        fx_s(2) = f_x(i+1,j,k)
+        fx_s(3) = f_x(i+1,j+1,k)
+        fx_s(4) = f_x(i,j+1,k)
+        fx_s(5) = f_x(i,j,k+1)
+        fx_s(6) = f_x(i+1,j,k+1)
+        fx_s(7) = f_x(i+1,j+1,k+1)
+        fx_s(8) = f_x(i,j+1,k+1)
+
+        fy_s(1) = f_y(i,j,k)
+        fy_s(2) = f_y(i+1,j,k)
+        fy_s(3) = f_y(i+1,j+1,k)
+        fy_s(4) = f_y(i,j+1,k)
+        fy_s(5) = f_y(i,j,k+1)
+        fy_s(6) = f_y(i+1,j,k+1)
+        fy_s(7) = f_y(i+1,j+1,k+1)
+        fy_s(8) = f_y(i,j+1,k+1)
+
+        fz_s(1) = f_z(i,j,k)
+        fz_s(2) = f_z(i+1,j,k)
+        fz_s(3) = f_z(i+1,j+1,k)
+        fz_s(4) = f_z(i,j+1,k)
+        fz_s(5) = f_z(i,j,k+1)
+        fz_s(6) = f_z(i+1,j,k+1)
+        fz_s(7) = f_z(i+1,j+1,k+1)
+        fz_s(8) = f_z(i,j+1,k+1)
+
+        !! Initializing values (current position/value)
+        x_i = x(i,j,k)
+        y_i = y(i,j,k)
+        z_i = z(i,j,k)
+
+        fx_i = f_x(i,j,k)
+        fy_i = f_y(i,j,k)
+        fz_i = f_y(i,j,k)
+
+        interpolated_sum = 0.d0
+
+        do n = 1, max_n
+
+            !! Stop if we are outside of the calculation domain (control unit).
+            x_boundary_stop = (x_i < x(i,j,k)) .or. (x_i > x(i,j,k))
+            y_boundary_stop = (y_i < y(i,j,k)) .or. (y_i > y(i,j,k))
+            z_boundary_stop = (z_i < z(i,j,k)) .or. (z_i > z(i,j,k))
+            boundary_stop = x_boundary_stop .or. y_boundary_stop .or. z_boundary_stop
+
+            !! Stop if function value is = 0.
+            function_value_stop = (norm2((/fx_i, fy_i, fz_i/)) == 0.d0)
+
+            if (boundary_stop .or. function_value_stop) then
+                exit
+            end if
+
+            !! Interpolate function value
+            do s = 1, 8
+                alpha(s) = (x_s(7) - x_i) * (y_s(7) - y_i) * (z_s(7) - z_i)
+                alpha(s) = alpha(s) / ( (x_s(7) - x_s(s))*(y_s(7)-y_s(s))*(z_s(7)-z_s(s)) )
+
+                interpolated_sum(1) = interpolated_sum(1) + alpha(s)*fx_s(s)
+                interpolated_sum(2) = interpolated_sum(2) + alpha(s)*fy_s(s)
+                interpolated_sum(3) = interpolated_sum(3) + alpha(s)*fz_s(s)
+            end do
+            
+            !! Interpolated values of function.
+            fx_i = interpolated_sum(1)
+            fy_i = interpolated_sum(2)
+            fz_i = interpolated_sum(3)
+
+            !! Position/location of interpolated function value.
+            x_i = x_i + ds(1)*fx_i
+            y_i = y_i + ds(2)*fy_i
+            z_i = z_i + ds(3)*fz_i
+            
+        end do
+            
+
+
+    end function integrate
+
+
     function hessian_mat(f, x, y, z, imax, jmax, kmax) result(h_mat)
         !! Creates the Hessian Matrix for each node in 3d
         implicit none

@@ -15,45 +15,45 @@ program DNSUTA_extract
   integer :: jstart, jend
   integer :: kstart, kend
 
-  real, dimension(:,:,:), allocatable :: x
-  real, dimension(:,:,:), allocatable :: y
-  real, dimension(:,:,:), allocatable :: z
+  real(8), dimension(:,:,:), allocatable :: x
+  real(8), dimension(:,:,:), allocatable :: y
+  real(8), dimension(:,:,:), allocatable :: z
 
-  real, dimension(:,:,:), allocatable :: u
-  real, dimension(:,:,:), allocatable :: v
-  real, dimension(:,:,:), allocatable :: w
+  real(8), dimension(:,:,:), allocatable :: u
+  real(8), dimension(:,:,:), allocatable :: v
+  real(8), dimension(:,:,:), allocatable :: w
 
-  real, dimension(:,:,:,:), allocatable :: f
+  real(8), dimension(:,:,:,:), allocatable :: f
 
-  real, dimension(:,:,:), allocatable :: dudx, dudy, dudz
-  real, dimension(:,:,:), allocatable :: dvdx, dvdy, dvdz
-  real, dimension(:,:,:), allocatable :: dwdx, dwdy, dwdz
-  real :: rdudx,rdudy,rdudz,rdvdx,rdvdy,rdvdz,rdwdx
-  real :: rdwdy,rdwdz,rvort_x,rvort_y,rvort_z
+  real(8), dimension(:,:,:), allocatable :: dudx, dudy, dudz
+  real(8), dimension(:,:,:), allocatable :: dvdx, dvdy, dvdz
+  real(8), dimension(:,:,:), allocatable :: dwdx, dwdy, dwdz
+  real(8) :: rdudx,rdudy,rdudz,rdvdx,rdvdy,rdvdz,rdwdx
+  real(8) :: rdwdy,rdwdz,rvort_x,rvort_y,rvort_z
 
-  real, dimension(:,:,:), allocatable :: vorticity_x
-  real, dimension(:,:,:), allocatable :: vorticity_y
-  real, dimension(:,:,:), allocatable :: vorticity_z
+  real(8), dimension(:,:,:), allocatable :: vorticity_x
+  real(8), dimension(:,:,:), allocatable :: vorticity_y
+  real(8), dimension(:,:,:), allocatable :: vorticity_z
 
-  real, dimension(:,:,:), allocatable :: vorticity_mag
+  real(8), dimension(:,:,:), allocatable :: vorticity_mag
 
-  real, dimension(:,:,:), allocatable :: omega,localOmega,Qmethod,QGlob
-  real, dimension(:,:,:), allocatable :: omg_x,omg_y,omg_z, omgGradXRortex
-  real, dimension(:,:,:), allocatable :: omgLoc_x,omgLoc_y,omgLoc_z,QLoc_x,QLoc_y,QLoc_z
-  real, dimension(:,:,:), allocatable :: omg_xx,omg_xy,omg_xz
-  real, dimension(:,:,:), allocatable :: omg_yx,omg_yy,omg_yz
-  real, dimension(:,:,:), allocatable :: omg_zx,omg_zy,omg_zz
+  real(8), dimension(:,:,:), allocatable :: omega,localOmega,Qmethod,QGlob
+  real(8), dimension(:,:,:), allocatable :: omg_x,omg_y,omg_z, omgGradXRortex
+  real(8), dimension(:,:,:), allocatable :: omgLoc_x,omgLoc_y,omgLoc_z,QLoc_x,QLoc_y,QLoc_z
+  real(8), dimension(:,:,:), allocatable :: omg_xx,omg_xy,omg_xz
+  real(8), dimension(:,:,:), allocatable :: omg_yx,omg_yy,omg_yz
+  real(8), dimension(:,:,:), allocatable :: omg_zx,omg_zy,omg_zz
 
-  real, dimension(:,:,:), allocatable :: rortex_x
-  real, dimension(:,:,:), allocatable :: rortex_y
-  real, dimension(:,:,:), allocatable :: rortex_z
-  real, dimension(:,:,:), allocatable :: isLocExtrOmg
-  real, dimension(:,:,:), allocatable :: rortexEigr
+  real(8), dimension(:,:,:), allocatable :: rortex_x
+  real(8), dimension(:,:,:), allocatable :: rortex_y
+  real(8), dimension(:,:,:), allocatable :: rortex_z
+  real(8), dimension(:,:,:), allocatable :: isLocExtrOmg
+  real(8), dimension(:,:,:), allocatable :: rortexEigr
 
-  real, dimension(:,:,:), allocatable :: rortex_mag, lamb_ci,rortexGlob_mag
-  real,dimension (:,:,:), allocatable :: rortex_mag_x,rortex_mag_y, rortex_mag_z
+  real(8), dimension(:,:,:), allocatable :: rortex_mag, lamb_ci,rortexGlob_mag
+  real(8),dimension (:,:,:), allocatable :: rortex_mag_x,rortex_mag_y, rortex_mag_z
 
-  real :: vor(3),vrtmp(3), rorMag,normljm,normljm2,ljmtmp,ljmtmp2
+  real(8) :: vor(3),vrtmp(3), rorMag,normljm,normljm2,ljmtmp,ljmtmp2
 
   character(100) :: gridfilename, funcfilename, outputfilename
   character(100) :: outputfilename1
@@ -78,61 +78,61 @@ program DNSUTA_extract
   character(100) :: msg
   integer :: nvar
 
-  real :: aaa
-  real :: bbb
+  real(8) :: aaa
+  real(8) :: bbb
 
-  real :: thljm, qljm,rljm,pi
-  real :: omega_eps
+  real(8) :: thljm, qljm,rljm,pi
+  real(8) :: omega_eps
 
-  real :: vort_2
+  real(8) :: vort_2
 
-  real :: u_xi, u_eta, u_zeta, u_xiR, u_etaR,u_zetaR
-  real :: v_xi, v_eta, v_zeta, u_xiQ, u_etaQ,u_zetaQ
-  real :: w_xi, w_eta, w_zeta
+  real(8) :: u_xi, u_eta, u_zeta, u_xiR, u_etaR,u_zetaR
+  real(8) :: v_xi, v_eta, v_zeta, u_xiQ, u_etaQ,u_zetaQ
+  real(8) :: w_xi, w_eta, w_zeta
 
-  real :: x_xi, x_eta, x_zeta
-  real :: y_xi, y_eta, y_zeta
-  real :: z_xi, z_eta, z_zeta
+  real(8) :: x_xi, x_eta, x_zeta
+  real(8) :: y_xi, y_eta, y_zeta
+  real(8) :: z_xi, z_eta, z_zeta
 
-  real :: xi_x, xi_y, xi_z
-  real :: eta_x, eta_y, eta_z
-  real :: zeta_x, zeta_y, zeta_z
+  real(8) :: xi_x, xi_y, xi_z
+  real(8) :: eta_x, eta_y, eta_z
+  real(8) :: zeta_x, zeta_y, zeta_z
 
-  real :: det
+  real(8) :: det
 
-  real :: a(3,3), Aljm(3,3), Matljm(3,3)
+  real(8) :: a(3,3), Aljm(3,3), Matljm(3,3)
 
-  real :: t1, t2, t3, t4, t5, t6
+  real(8) :: t1, t2, t3, t4, t5, t6
 
-  real :: aa, bb, cc
-  real :: delta
-  real :: tt(3, 3)
+  real(8) :: aa, bb, cc
+  real(8) :: delta
+  real(8) :: tt(3, 3)
 
-  complex :: eig1c, eig2c
-  real :: eig3r
+  complex(8) :: eig1c, eig2c
+  real(8) :: eig3r
 
-  real :: qq, rr, root11,root22,root33
-  real :: aaaa, bbbb
+  real(8) :: qq, rr, root11,root22,root33
+  real(8) :: aaaa, bbbb
 
 
-  real :: vr(3)
-  real :: temp
-  real :: vg(3,3)
+  real(8) :: vr(3)
+  real(8) :: temp
+  real(8) :: vg(3,3)
 
-  real :: alpha, beta
+  real(8) :: alpha, beta
 
   ! Modified Omega Liutex variables
-  real, dimension(:,:,:), allocatable :: omega_l
-  real, dimension(:,:,:), allocatable :: lambda_cr, lambda_r
-  real :: maxbeta_alpha, omega_l_eps
+  real(8), dimension(:,:,:), allocatable :: omega_l
+  real(8), dimension(:,:,:), allocatable :: lambda_cr, lambda_r
+  real(8) :: maxbeta_alpha, omega_l_eps
 
-  real, dimension(:,:,:), allocatable :: o_alpha, o_beta
+  real(8), dimension(:,:,:), allocatable :: o_alpha, o_beta
 
-  real, parameter :: z0(3) = (/0.0, 0.0, 1.0/)
-  real :: rm
-  real :: qqq(3,3)
+  real(8), parameter :: z0(3) = (/0.0, 0.0, 1.0/)
+  real(8) :: rm
+  real(8) :: qqq(3,3)
 
-  real :: delta1, delta2, delta3
+  real(8) :: delta1, delta2, delta3
 
   character(6) :: chars
 
@@ -943,13 +943,13 @@ program DNSUTA_extract
 
             ! central difference
 
-            u_xi = 0.5*(omg_x(i+1, j, k) - omg_x(i-1, j, k))
-            v_xi = 0.5*(omg_y(i+1, j, k) - omg_y(i-1, j, k))
-            w_xi = 0.5*(omg_z(i+1, j, k) - omg_z(i-1, j, k))
+            u_xi = 0.5d0*(omg_x(i+1, j, k) - omg_x(i-1, j, k))
+            v_xi = 0.5d0*(omg_y(i+1, j, k) - omg_y(i-1, j, k))
+            w_xi = 0.5d0*(omg_z(i+1, j, k) - omg_z(i-1, j, k))
 
-            x_xi = 0.5*(x(i+1, j, k) - x(i-1, j, k))
-            y_xi = 0.5*(y(i+1, j, k) - y(i-1, j, k))
-            z_xi = 0.5*(z(i+1, j, k) - z(i-1, j, k))
+            x_xi = 0.5d0*(x(i+1, j, k) - x(i-1, j, k))
+            y_xi = 0.5d0*(y(i+1, j, k) - y(i-1, j, k))
+            z_xi = 0.5d0*(z(i+1, j, k) - z(i-1, j, k))
 
           end if
 
@@ -981,13 +981,13 @@ program DNSUTA_extract
 
             ! central difference
 
-            u_eta = 0.5*(omg_x(i, j+1, k) - omg_x(i, j-1, k))
-            v_eta = 0.5*(omg_y(i, j+1, k) - omg_y(i, j-1, k))
-            w_eta = 0.5*(omg_z(i, j+1, k) - omg_z(i, j-1, k))
+            u_eta = 0.5d0*(omg_x(i, j+1, k) - omg_x(i, j-1, k))
+            v_eta = 0.5d0*(omg_y(i, j+1, k) - omg_y(i, j-1, k))
+            w_eta = 0.5d0*(omg_z(i, j+1, k) - omg_z(i, j-1, k))
 
-            x_eta = 0.5*(x(i, j+1, k) - x(i, j-1, k))
-            y_eta = 0.5*(y(i, j+1, k) - y(i, j-1, k))
-            z_eta = 0.5*(z(i, j+1, k) - z(i, j-1, k))
+            x_eta = 0.5d0*(x(i, j+1, k) - x(i, j-1, k))
+            y_eta = 0.5d0*(y(i, j+1, k) - y(i, j-1, k))
+            z_eta = 0.5d0*(z(i, j+1, k) - z(i, j-1, k))
 
           end if
 
@@ -1019,13 +1019,13 @@ program DNSUTA_extract
 
             ! central difference
 
-            u_zeta = 0.5*(omg_x(i, j, k+1) - omg_x(i, j, k-1))
-            v_zeta = 0.5*(omg_y(i, j, k+1) - omg_y(i, j, k-1))
-            w_zeta = 0.5*(omg_z(i, j, k+1) - omg_z(i, j, k-1))
+            u_zeta = 0.5d0*(omg_x(i, j, k+1) - omg_x(i, j, k-1))
+            v_zeta = 0.5d0*(omg_y(i, j, k+1) - omg_y(i, j, k-1))
+            w_zeta = 0.5d0*(omg_z(i, j, k+1) - omg_z(i, j, k-1))
 
-            x_zeta = 0.5*(x(i, j, k+1) - x(i, j, k-1))
-            y_zeta = 0.5*(y(i, j, k+1) - y(i, j, k-1))
-            z_zeta = 0.5*(z(i, j, k+1) - z(i, j, k-1))
+            x_zeta = 0.5d0*(x(i, j, k+1) - x(i, j, k-1))
+            y_zeta = 0.5d0*(y(i, j, k+1) - y(i, j, k-1))
+            z_zeta = 0.5d0*(z(i, j, k+1) - z(i, j, k-1))
 
           end if
 
@@ -1068,35 +1068,36 @@ program DNSUTA_extract
           !calculate the eigenvalue
 
           ! set velocity gradient tensor
-          a(1,1) =omg_xx(ii, jj, kk)
-          a(1,2) =omg_xy(ii, jj, kk)
-          a(1,3) =omg_xz(ii, jj, kk)
-          a(2,1) =omg_yx(ii, jj, kk)
-          a(2,2) =omg_yy(ii, jj, kk)
-          a(2,3) =omg_yz(ii, jj, kk)
-          a(3,1) =omg_zx(ii, jj, kk)
-          a(3,2) =omg_zy(ii, jj, kk)
-          a(3,3) =omg_zz(ii, jj, kk)
+          a(1,1) = omg_xx(ii, jj, kk)
+          a(1,2) = omg_xy(ii, jj, kk)
+          a(1,3) = omg_xz(ii, jj, kk)
+          a(2,1) = omg_yx(ii, jj, kk)
+          a(2,2) = omg_yy(ii, jj, kk)
+          a(2,3) = omg_yz(ii, jj, kk)
+          a(3,1) = omg_zx(ii, jj, kk)
+          a(3,2) = omg_zy(ii, jj, kk)
+          a(3,3) = omg_zz(ii, jj, kk)
 
-          Aljm=(a+transpose(a))/2
+          Aljm = (a+transpose(a)) / 2.d0
 
-          Matljm=Aljm
+          Matljm = Aljm
           aa = -(Matljm(1,1)+Matljm(2,2)+Matljm(3,3))
 
           tt = matmul(Matljm,Matljm)
 
-          bb = -0.5*(tt(1,1)+tt(2,2)+tt(3,3)-(Matljm(1,1)+Matljm(2,2)+Matljm(3,3))**2)
+          bb = -0.5d0*(tt(1,1)+tt(2,2)+tt(3,3)-(Matljm(1,1)+Matljm(2,2)+Matljm(3,3))**2)
 
           cc = -(Matljm(1,1)*(Matljm(2,2)*Matljm(3,3)-Matljm(2,3)*Matljm(3,2))                            &
                  -Matljm(1,2)*(Matljm(2,1)*Matljm(3,3)-Matljm(2,3)*Matljm(3,1))                           &
                  +Matljm(1,3)*(Matljm(2,1)*Matljm(3,2)-Matljm(2,2)*Matljm(3,1)))
 
-          qljm=(aa**2-3*bb)/9
-          rljm=(2*aa**3-9*aa*bb+27*cc)/54
-          thljm=acos(rljm/sqrt(qljm**3))
-          root11=-2*sqrt(qljm)*cos(thljm/3)-aa/3
-          root22=-2*sqrt(qljm)*cos(thljm/3+2.0/3*pi)-aa/3
-          root33=-2*sqrt(qljm)*cos(thljm/3-2.0/3*pi)-aa/3
+          qljm = (aa**2 - 3.d0*bb)/9.d0
+          rljm = (2.d0*aa**3 - 9.d0*aa*bb + 27.d0*cc)/54.d0
+          thljm = acos(rljm/sqrt(qljm**3))
+
+          root11 = -2.d0*sqrt(qljm)*cos(thljm/3.0d0) - aa/3.d0
+          root22 = -2.d0*sqrt(qljm)*cos(thljm/3.0d0 +2.0/3.d0*pi) - aa/3.d0
+          root33 = -2.d0*sqrt(qljm)*cos(thljm/3.d0 - 2.0d0/3.d0*pi) - aa/3.d0
 
           if(root11>root22) then
               qljm=root11
@@ -1114,10 +1115,6 @@ program DNSUTA_extract
               qljm=root11
               root11=root22
               root22=qljm
-          end if
-
-          if(root22<0.0) then
-            isLocExtrOmg(ii,jj, kk)=1.0
           end if
 
         end do
@@ -1156,8 +1153,6 @@ program DNSUTA_extract
 
     call cpu_time(t5)
 
-    ! open(18, file='RortexZDZpoints.txt')
-
     do k = 1, kmax_local
       do j = 1, jmax_local
         do i = 1, imax_local
@@ -1190,40 +1185,41 @@ program DNSUTA_extract
 
           tt = matmul(a,a)
 
-          bb = -0.5*(tt(1,1)+tt(2,2)+tt(3,3)-(a(1,1)+a(2,2)+a(3,3))**2)
+          bb = -0.5d0*(tt(1,1)+tt(2,2)+tt(3,3)-(a(1,1)+a(2,2)+a(3,3))**2)
 
-          cc = -(a(1,1)*(a(2,2)*a(3,3)-a(2,3)*a(3,2))                          &
-               -a(1,2)*(a(2,1)*a(3,3)-a(2,3)*a(3,1))                           &
-               +a(1,3)*(a(2,1)*a(3,2)-a(2,2)*a(3,1)))
+          cc = -(a(1,1) * (a(2,2)*a(3,3)-a(2,3)*a(3,2))                          &
+               -a(1,2) * (a(2,1)*a(3,3)-a(2,3)*a(3,1))                           &
+               +a(1,3) * (a(2,1)*a(3,2)-a(2,2)*a(3,1)))
 
           ! discriminant of characteristic equation
           delta = 18*aa*bb*cc-4*aa**3*cc+aa**2*bb**2-4*bb**3-27*cc**2
 
-          qq = (aa**2-3*bb)/9.0
-          rr = (2*aa**3-9*aa*bb+27*cc)/54.0
+          qq = (aa**2 - 3.d0*bb) / 9.0d0
+          rr = (2.d0 * aa**3 - 9.d0 * aa * bb + 27.d0 * cc) / 54.0d0
 
           ! delta = rr**2 - qq**3
           ! alleviate round error
-          delta = -delta/108
+          delta = -delta / 108.0d0
 
-          vr(1)=0.0
-          vr(2)=0.0
-          vr(3)=0.0
+          vr(1) = 0.0d0
+          vr(2) = 0.0d0
+          vr(3) = 0.0d0
           
-          if(delta > 0.0) then ! one real root and two complex conjugate roots
+          if(delta > 0.0d0) then ! one real root and two complex conjugate roots
 
-            aaaa = -sign(1.0, rr)*(abs(rr)+sqrt(delta))**(1.0/3.0)
+            aaaa = -sign(1.0, rr)*(abs(rr)+sqrt(delta))**(1.0d0/3.0d0)
 
-            if(aaaa == 0.0) then
-              bbbb = 0.0
+            if(aaaa == 0.0d0) then
+              bbbb = 0.0d0
             else
               bbbb = qq/aaaa
             end if
 
-            eig1c = cmplx(-0.5*(aaaa+bbbb)-aa/3.0, 0.5*sqrt(3.0)*(aaaa-bbbb))
-            eig2c = cmplx(real(eig1c), -aimag(eig1c)) !original wrong here
-            eig3r = aaaa+bbbb-aa/3.0
-            rortexEigr(i,j,k)=abs(eig3r)
+            eig1c = cmplx(-0.5d0*(aaaa+bbbb)-aa/3.0d0, 0.5d0*sqrt(3.0d0)*(aaaa-bbbb), kind=8)
+            eig2c = cmplx(real(eig1c), -aimag(eig1c), kind=8) !original wrong here
+            eig3r = aaaa + bbbb - aa / 3.0d0
+
+            rortexEigr(i,j,k) = abs(eig3r)
 
             ! real right eigenvector
 
@@ -1231,7 +1227,7 @@ program DNSUTA_extract
             delta2 = (a(2,2)-eig3r)*(a(3,3)-eig3r) - a(2,3)*a(3,2)
             delta3 = (a(1,1)-eig3r)*(a(3,3)-eig3r) - a(1,3)*a(3,1)
 
-            if(delta1 == 0.0 .and. delta2 == 0.0 .and. delta3 == 0.0) then
+            if(delta1 == 0.0d0 .and. delta2 == 0.0d0 .and. delta3 == 0.0d0) then
               write(*,*) 'ERROR: delta1 = delta2 = delta3 = 0.0'
               write(*,*) a(1,1)-eig3r,  a(1,2),       a(1,3)
               write(*,*) a(2,1),        a(2,2)-eig3r, a(2,3)
@@ -1245,12 +1241,12 @@ program DNSUTA_extract
 
               vr(1) = (-(a(2,2)-eig3r)*a(1,3) +         a(1,2)*a(2,3))/delta1
               vr(2) = (         a(2,1)*a(1,3) - (a(1,1)-eig3r)*a(2,3))/delta1
-              vr(3) = 1.0
+              vr(3) = 1.0d0
 
             else if(abs(delta2) >= abs(delta1) .and.                           &
                     abs(delta2) >= abs(delta3)) then
 
-              vr(1) = 1.0
+              vr(1) = 1.0d0
               vr(2) = (-(a(3,3)-eig3r)*a(2,1) +         a(2,3)*a(3,1))/delta2
               vr(3) = (         a(3,2)*a(2,1) - (a(2,2)-eig3r)*a(3,1))/delta2
 
@@ -1258,7 +1254,7 @@ program DNSUTA_extract
                     abs(delta3) >= abs(delta2)) then
 
                vr(1) = (-(a(3,3)-eig3r)*a(1,2) +         a(1,3)*a(3,2))/delta3
-               vr(2) = 1.0
+               vr(2) = 1.0d0
                vr(3) = (         a(3,1)*a(1,2) - (a(1,1)-eig3r)*a(3,2))/delta3
 
             else
@@ -1269,11 +1265,11 @@ program DNSUTA_extract
 
             end if
 
-            temp = sqrt(vr(1)**2+vr(2)**2+vr(3)**2)
+            temp = sqrt(vr(1)**2 + vr(2)**2 + vr(3)**2)
 
-            vr(1) = vr(1)/temp
-            vr(2) = vr(2)/temp
-            vr(3) = vr(3)/temp
+            vr(1) = vr(1) / temp
+            vr(2) = vr(2) / temp
+            vr(3) = vr(3) / temp
 
             call rotation(z0, vr, qqq)
 
@@ -1309,40 +1305,23 @@ program DNSUTA_extract
                                     +rortex_y(i,j,k)**2                        &
                                     +rortex_z(i,j,k)**2)
 
-            lamb_ci(i,j,k)=abs(aimag(eig1c))
+            lamb_ci(i,j,k) = abs(aimag(eig1c))
 
           else ! three real roots
 
-            rortex_x(i,j,k) = 0.0
-            rortex_y(i,j,k) = 0.0
-            rortex_z(i,j,k) = 0.0
-            rortex_mag(i,j,k) = 0.0
+            rortex_x(i,j,k) = 0.0d0
+            rortex_y(i,j,k) = 0.0d0
+            rortex_z(i,j,k) = 0.0d0
+            rortex_mag(i,j,k) = 0.0d0
 
           end if
 
-
-        ljmtmp2=sqrt(rortex_mag_x(i,j,k)**2 + rortex_mag_y(i,j,k)**2 &
+          ljmtmp2=sqrt(rortex_mag_x(i,j,k)**2 + rortex_mag_y(i,j,k)**2 &
                 +rortex_mag_z(i,j,k)**2)
 
-        isLocExtrOmg(i,j,k)=0.0
-
-        if (ljmtmp2 < 1e-12 .and. rortex_mag(i,j,k)> 1.0e-5) then
-            isLocExtrOmg(i,j,k)=1.0
-        endif
-
-
-        ! if(isLocExtrOmg(i,j,k).eq. 1.0) then
-
-        !     write(18,"(3(f21.12))") x(i+istart-1, j+jstart-1, k+kstart-1),  &
-        !         y(i+istart-1, j+jstart-1, k+kstart-1),  &
-        !         z(i+istart-1, j+jstart-1, k+kstart-1)
-
-        ! end if
-
-         ljmtmp=sqrt((rortex_mag_y(i,j,k)*rortex_z(i,j,k)-rortex_mag_z(i,j,k)*rortex_y(i,j,k))**2 &
+          ljmtmp=sqrt((rortex_mag_y(i,j,k)*rortex_z(i,j,k)-rortex_mag_z(i,j,k)*rortex_y(i,j,k))**2 &
               +(rortex_mag_z(i,j,k)*rortex_x(i,j,k)-rortex_mag_x(i,j,k)*rortex_z(i,j,k))**2 &
               +(rortex_mag_x(i,j,k)*rortex_y(i,j,k)-rortex_mag_y(i,j,k)*rortex_x(i,j,k))**2)
-
 
           if (ljmtmp2>1.0e-6) then
               rortexEigr(i,j,k)=abs(rortex_mag_x(i,j,k)*vr(1)+rortex_mag_y(i,j,k)*vr(2)+rortex_mag_z(i,j,k)*vr(3) )/ljmtmp2
@@ -1352,13 +1331,13 @@ program DNSUTA_extract
 
          omgGradXRortex(i,j,k)=1.0
 
-         if(localOmega(i,j,k)<0.51) then
+         if(localOmega(i,j,k) < 0.51) then
              omgGradXRortex(i,j,k)=0.0
-         endif
+         end if
 
-         rortex_mag_x(i,j,k)=rortex_mag_x(i,j,k)*omgGradXRortex(i,j,k)
-         rortex_mag_y(i,j,k)=rortex_mag_y(i,j,k)*omgGradXRortex(i,j,k)
-         rortex_mag_z(i,j,k)=rortex_mag_z(i,j,k)*omgGradXRortex(i,j,k)
+         rortex_mag_x(i,j,k) = rortex_mag_x(i,j,k)*omgGradXRortex(i,j,k)
+         rortex_mag_y(i,j,k) = rortex_mag_y(i,j,k)*omgGradXRortex(i,j,k)
+         rortex_mag_z(i,j,k) = rortex_mag_z(i,j,k)*omgGradXRortex(i,j,k)
 
         end do
       end do
@@ -1366,7 +1345,7 @@ program DNSUTA_extract
 
     call cpu_time(t6)
 
-    write(*,*) 'calculation time: ', t6-t5
+    write(*,*) 'calculation time: ', t6 - t5
 
     1234 continue
 
@@ -1431,20 +1410,20 @@ program DNSUTA_extract
 
           ! delta = rr**2 - qq**3
           ! alleviate round error
-          delta = -delta/108
+          delta = -delta / 108.d0
 
-          if(delta > 0.0) then ! one real root and two complex conjugate roots
+          if(delta > 0.0d0) then ! one real root and two complex conjugate roots
 
-            aaaa = -sign(1.0, rr)*(abs(rr)+sqrt(delta))**(1.0/3.0)
+            aaaa = -sign(1.0, rr)*(abs(rr)+sqrt(delta))**(1.0d0/3.0d0)
 
-            if(aaaa == 0.0) then
-              bbbb = 0.0
+            if(aaaa == 0.0d0) then
+              bbbb = 0.0d0
             else
-              bbbb = qq/aaaa
+              bbbb = qq / aaaa
             end if
 
-            eig1c = cmplx(-0.5*(aaaa+bbbb)-aa/3.0, 0.5*sqrt(3.0)*(aaaa-bbbb))
-            eig2c = cmplx(real(eig1c), -aimag(eig1c))
+            eig1c = cmplx(-0.5d0*(aaaa+bbbb)-aa/3.0, 0.5*sqrt(3.0)*(aaaa-bbbb), kind=8)
+            eig2c = cmplx(real(eig1c), -aimag(eig1c), kind=8)
             eig3r = aaaa+bbbb-aa/3.0
 
             ! real right eigenvector
@@ -1594,7 +1573,6 @@ program DNSUTA_extract
     f(:,:,:,16) = rortex_mag_z
     f(:,:,:,17) = omega_l
 
-
     open(fin1, file=trim(outputfilename2), form='unformatted', action='write')
 
     write(fin1) imax_local, jmax_local, kmax_local, nvar
@@ -1605,7 +1583,6 @@ program DNSUTA_extract
                                     nx=1,nvar)
 
     close(fin1)
-    ! close(18)
 
     deallocate(f)
 
@@ -1676,13 +1653,13 @@ end program DNSUTA_extract
 subroutine cal_rortex(a, vor, vr,rorMag)
   implicit none
 
-  real, intent(in) :: a(3,3)
-  real, intent(in) :: vor(3)
-  real, intent(out) :: vr(3), rorMag
+  real(8), intent(in) :: a(3,3)
+  real(8), intent(in) :: vor(3)
+  real(8), intent(out) :: vr(3), rorMag
 
-  real:: aa,bb,cc,delta,rr,aaaa,bbbb,qq,delta1,delta2,delta3,temp
-  complex:: eig1c,eig2c,eig3r
-  real :: tt(3,3)
+  real(8):: aa,bb,cc,delta,rr,aaaa,bbbb,qq,delta1,delta2,delta3,temp
+  complex(8):: eig1c,eig2c,eig3r
+  real(8) :: tt(3,3)
           ! Cubic Formula
           ! Reference: Numerical Recipes in FORTRAN 77, Second Edition
           ! 5.6 Quadratic and Cubic Equations
@@ -1797,17 +1774,17 @@ subroutine rotation(u, v, r)
 
   implicit none
 
-  real, intent(in) :: u(3)
-  real, intent(in) :: v(3)
-  real, intent(out) :: r(3, 3)
+  real(8), intent(in) :: u(3)
+  real(8), intent(in) :: v(3)
+  real(8), intent(out) :: r(3, 3)
 
-  real :: a(3)
-  real :: aa
-  real :: t
-  real :: alpha
-  real :: c, s
+  real(8) :: a(3)
+  real(8) :: aa
+  real(8) :: t
+  real(8) :: alpha
+  real(8) :: c, s
 
-  real, parameter :: eps = 1.0e-10
+  real(8), parameter :: eps = 1.0e-10
 
   ! a = u x v
   a(1) = u(2)*v(3)-u(3)*v(2)

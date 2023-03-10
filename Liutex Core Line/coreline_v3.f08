@@ -35,16 +35,16 @@ program main
     real(8), dimension(:,:,:,:), allocatable :: f, f2
     real(8), dimension(:,:,:,:), allocatable :: r, lmg
     real(8), dimension(:,:,:), allocatable :: x, y, z
-    real(8), dimension(:,:,:), allocatable :: l_mag, omega_l
-    real(8), dimension(:,:,:), allocatable :: l_core_x, l_core_y, l_core_z
+    real(8), dimension(:,:,:), allocatable :: r_mag, omega_l
+    real(8), dimension(:,:,:), allocatable :: liutex_core_x, liutex_core_y, liutex_core_z
     real(8), dimension(:,:,:), allocatable :: div_lmg, div_r
     real(8), dimension(3) :: lmg_vec, r_vec
     real(8) :: lmg_norm, r_norm
-    real(8) :: omega_l_tol, dot_tol, div_tol, tol3
-    logical :: omega_l_condition, div_lmg_condition, div_r_condition
+    real(8) :: omega_l_tol, dot_tol, div_r_tol, div_lmg_tol
+    logical :: omega_l_condition, div_lmg_condition, div_r_condition, conditions
     integer :: imax, jmax, kmax, nx
     integer :: i, j, k
-    integer :: l_core_counter
+    integer :: liutex_core_counter
 
     
     !! Program start
@@ -75,17 +75,16 @@ program main
     
     gridfilename = 'data/'//trim(datafileprefix)//'_'//chars//'.xyz'
 
-    !! check if the grid file exists
+    !! Check if the grid file exists
     inquire(file=trim(gridfilename), exist=lexist)
     if(.not. lexist) then
         write(*,*) 'ERROR: no grid file ', trim(gridfilename)
         stop
     end if
 
-    write(*,*)
     write(*,*) 'reading ', trim(gridfilename)
 
-    !! open grid file
+    !! Open grid file
     open(fin1, file=trim(gridfilename), form='unformatted', action='read', iostat=ios, iomsg=msg)
     if(ios /= 0) then
         write(*,*) 'ERROR: ', msg
@@ -103,8 +102,9 @@ program main
     allocate(z(imax, jmax, kmax))
 
     write(*,*)
+    write(*,*) 'Grid file (.xyz) dimensions:'
     write(*,*) 'imax = ', imax, ' jmax = ', jmax, ' kmax = ', kmax
-
+    write(*,*)
     !! read coordinates
     read(fin1, iostat=ios, iomsg=msg) (((x(i, j, k), i=1,imax), j=1,jmax), k=1,kmax),  &
                                       (((y(i, j, k), i=1,imax), j=1,jmax), k=1,kmax),  &
@@ -112,7 +112,7 @@ program main
 
     close(fin1)
 
-    print*, 'Grid File Read Complete !!'
+    write(*,*) 'Grid File Read Complete !!'
 
     do iii = f_start, f_end, skip
 
@@ -127,7 +127,6 @@ program main
             stop
         end if
 
-        write(*,*)
         write(*,*) 'reading ', funcfilename
 
         !! Open function file
@@ -176,20 +175,18 @@ program main
         print*, "Function File Read Complete !!"
 
         allocate(r(imax,jmax,kmax,3))
-        allocate(l_mag(imax,jmax,kmax))
+        allocate(r_mag(imax,jmax,kmax))
         allocate(lmg(imax,jmax,kmax,3))
         allocate(omega_l(imax,jmax,kmax))
 
-        r(:,:,:,:) = f(:,:,:, 8:10)
-        l_mag = f(:,:,:, 11)
-        lmg(:,:,:,:) = f(:,:,:, 14:16)
-        omega_l = f(:,:,:, 17)
+        r      = f(:,:,:, 8:10)
+        r_mag  = f(:,:,:, 11)
+        lmg    = f(:,:,:, 14:16)
+        omega_l= f(:,:,:, 17)
         
-        allocate(l_core_x(imax,jmax,kmax))   !! New Liutex Core Vector
-        allocate(l_core_y(imax,jmax,kmax))   !! New Liutex Core Vector
-        allocate(l_core_z(imax,jmax,kmax))   !! New Liutex Core Vector
-        
-        write(*,*) 'Finding the Liutex Core Vector Field'
+        allocate(liutex_core_x(imax,jmax,kmax))   !! New Liutex Core Vector
+        allocate(liutex_core_y(imax,jmax,kmax))   !! New Liutex Core Vector
+        allocate(liutex_core_z(imax,jmax,kmax))   !! New Liutex Core Vector
         
         !! Normalize vector fields
         do k = 1, kmax
@@ -218,51 +215,58 @@ program main
                 end do
             end do 
         end do
+        
+        write(*,*) 'Finding the Liutex Core Vector Field'
 
         pointfilename = 'data/corepoints_'//trim(datafileprefix)//'_'//chars//'.dat'
         open(fout1, file=trim(pointfilename), form='formatted', action='write')
 
-        l_core_x = 0.d0
-        l_core_y = 0.d0
-        l_core_z = 0.d0
+        liutex_core_x = 0.d0
+        liutex_core_y = 0.d0
+        liutex_core_z = 0.d0
 
         allocate(div_lmg(imax,jmax,kmax))
         allocate(div_r(imax,jmax,kmax))
 
         !! Finding the divergence of vectors.
-        div_lmg = divergence(lmg(:,:,:,1), lmg(:,:,:,2), lmg(:,:,:,3), x, y, z, imax, jmax, kmax)
-        div_r = divergence(r(:,:,:,1), r(:,:,:,2), r(:,:,:,3), x, y, z, imax, jmax, kmax)
+        div_lmg = divergence(abs(lmg(:,:,:,1)), abs(lmg(:,:,:,2)), abs(lmg(:,:,:,3)), x, y, z, imax, jmax, kmax)
+        ! div_r   = divergence(abs(r(:,:,:,1)), abs(r(:,:,:,2)), abs(r(:,:,:,3)), x, y, z, imax, jmax, kmax)
+
+        liutex_core_counter = 0
 
         !! Apply conditions for liutex core vector
 
-        omega_l_tol = 0.51d0    !! tolerance for omega liutex
-        dot_tol = 1.d-6         !! tolerance for dot product
-        div_tol = 1.d-6         !! tolerance for divergence condition
-
-        l_core_counter = 0
+        omega_l_tol = 0.51d0        !! tolerance for omega liutex
+        dot_tol     = 1.d-6         !! tolerance for dot product
+        div_r_tol   = 1.d-6         !! tolerance for divergence of liutex condition
+        div_lmg_tol = 1.d-4         !! tolerance for divergence of liutex gradient condition
 
         do k = 1, kmax
             do j = 1, jmax
                 do i = 1, imax
 
                     omega_l_condition = (omega_l(i,j,k) > omega_l_tol)
-                    
+
                     if (omega_l_condition) then
 
-                        div_lmg_condition = (abs(div_lmg(i,j,k)) < div_tol)
-                        div_r_condition = (abs(div_r(i,j,k)) < div_tol)
+                        ! div_r_condition = (abs(div_r(i,j,k)) < div_r_tol)
+                        div_lmg_condition = (abs(div_lmg(i,j,k)) > div_lmg_tol)
 
-                        if (div_lmg_condition) then
+                        ! conditions = div_r_condition
+                        conditions = div_lmg_condition
+                        ! conditions = div_lmg_condition .and. div_r_condition
 
-                            !! Liutex Core Line (l_core) vector components
-                            l_core_x(i,j,k) = l_mag(i,j,k) * lmg(i,j,k,1)
-                            l_core_y(i,j,k) = l_mag(i,j,k) * lmg(i,j,k,2)
-                            l_core_z(i,j,k) = l_mag(i,j,k) * lmg(i,j,k,3)
+                        if (conditions) then
 
-                            l_core_counter = l_core_counter + 1
+                            !! Liutex Core Line (liutex_core) vector components
+                            liutex_core_x(i,j,k) = r_mag(i,j,k) * lmg(i,j,k,1)
+                            liutex_core_y(i,j,k) = r_mag(i,j,k) * lmg(i,j,k,2)
+                            liutex_core_z(i,j,k) = r_mag(i,j,k) * lmg(i,j,k,3)
+
+                            liutex_core_counter = liutex_core_counter + 1
 
                             !! Write liutex core points to file
-                            write(fout1,*) x(i,j,k), y(i,j,k), z(i,j,k)
+                            ! write(fout1,*) x(i,j,k), y(i,j,k), z(i,j,k)
 
                         end if
 
@@ -275,15 +279,18 @@ program main
         close(fout1)
 
         !! Check if any liutex core lines were found.
-        if (l_core_counter == 0) then
+        if (liutex_core_counter == 0) then
             !! This should ONLY happen if there there is no turbulence/vortices.
             write(*,*)
             write(*,*) 'NO LIUTEX CORE LINES FOUND FOR: ', funcfilename
-            goto 1
+            goto 100
         else 
             write(*,*)
-            write(*,*) 'Liutex Core Lines Found: ', l_core_counter
+            write(*,*) 'Liutex Core Lines Found: ', liutex_core_counter
+            write(*,*)
         end if
+
+        write(*,*) 'Writing Function (.fun) file.'
 
         nvar = nvar + 3
         allocate(f2(imax,jmax,kmax,nvar))
@@ -291,12 +298,10 @@ program main
         f2(:,:,:, 1:nvar-3) = f
         deallocate(f)
         
-        f2(:,:,:, nvar-2)   = l_core_x
-        f2(:,:,:, nvar-1)   = l_core_y
-        f2(:,:,:, nvar)     = l_core_z
+        f2(:,:,:, nvar-2)   = liutex_core_x
+        f2(:,:,:, nvar-1)   = liutex_core_y
+        f2(:,:,:, nvar)     = liutex_core_z
         
-        write(*,*) 'Writing Function (.fun) file.'
-
         outputfilename = 'data/corelines_'//trim(datafileprefix)//'_'//chars//'.fun'
 
         open(fout1, file=trim(outputfilename), form='unformatted', action='write')
@@ -304,18 +309,17 @@ program main
         write(fout1) ((((f2(i, j, k, nx), i=1,imax), j=1,jmax), k=1,kmax), nx=1,nvar)
         close(fout1)
         
-        write(*,*)
         write(*,*) 'New function (.fun) file created: ', outputfilename
 
-        1 continue
+        100 continue
 
         deallocate(r)
-        deallocate(l_mag)
+        deallocate(r_mag)
         deallocate(lmg)
         deallocate(omega_l)
-        deallocate(l_core_x)
-        deallocate(l_core_y)
-        deallocate(l_core_z)
+        deallocate(liutex_core_x)
+        deallocate(liutex_core_y)
+        deallocate(liutex_core_z)
         
     end do
 
