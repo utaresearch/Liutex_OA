@@ -15,45 +15,36 @@ program DNSUTA_extract
   integer :: jstart, jend
   integer :: kstart, kend
 
-  real(8), dimension(:,:,:), allocatable :: x
-  real(8), dimension(:,:,:), allocatable :: y
-  real(8), dimension(:,:,:), allocatable :: z
-
-  real(8), dimension(:,:,:), allocatable :: u
-  real(8), dimension(:,:,:), allocatable :: v
-  real(8), dimension(:,:,:), allocatable :: w
-
-  real(8), dimension(:,:,:,:), allocatable :: f
-
-  real(8), dimension(:,:,:), allocatable :: dudx, dudy, dudz
-  real(8), dimension(:,:,:), allocatable :: dvdx, dvdy, dvdz
-  real(8), dimension(:,:,:), allocatable :: dwdx, dwdy, dwdz
-  real(8) :: rdudx,rdudy,rdudz,rdvdx,rdvdy,rdvdz,rdwdx
-  real(8) :: rdwdy,rdwdz,rvort_x,rvort_y,rvort_z
-
-  real(8), dimension(:,:,:), allocatable :: vorticity_x
-  real(8), dimension(:,:,:), allocatable :: vorticity_y
-  real(8), dimension(:,:,:), allocatable :: vorticity_z
-
-  real(8), dimension(:,:,:), allocatable :: vorticity_mag
-
-  real(8), dimension(:,:,:), allocatable :: omega,localOmega,Qmethod,QGlob
-  real(8), dimension(:,:,:), allocatable :: omg_x,omg_y,omg_z, omgGradXRortex
-  real(8), dimension(:,:,:), allocatable :: omgLoc_x,omgLoc_y,omgLoc_z,QLoc_x,QLoc_y,QLoc_z
-  real(8), dimension(:,:,:), allocatable :: omg_xx,omg_xy,omg_xz
-  real(8), dimension(:,:,:), allocatable :: omg_yx,omg_yy,omg_yz
-  real(8), dimension(:,:,:), allocatable :: omg_zx,omg_zy,omg_zz
-
-  real(8), dimension(:,:,:), allocatable :: rortex_x
-  real(8), dimension(:,:,:), allocatable :: rortex_y
-  real(8), dimension(:,:,:), allocatable :: rortex_z
-  real(8), dimension(:,:,:), allocatable :: isLocExtrOmg
-  real(8), dimension(:,:,:), allocatable :: rortexEigr
-
-  real(8), dimension(:,:,:), allocatable :: rortex_mag, lamb_ci,rortexGlob_mag
-  real(8),dimension (:,:,:), allocatable :: rortex_mag_x,rortex_mag_y, rortex_mag_z
-
-  real(8) :: vor(3),vrtmp(3), rorMag,normljm,normljm2,ljmtmp,ljmtmp2
+  real, dimension(:,:,:), allocatable :: x
+  real, dimension(:,:,:), allocatable :: y
+  real, dimension(:,:,:), allocatable :: z
+  real, dimension(:,:,:), allocatable :: u
+  real, dimension(:,:,:), allocatable :: v
+  real, dimension(:,:,:), allocatable :: w
+  real, dimension(:,:,:,:), allocatable :: f
+  real, dimension(:,:,:), allocatable :: dudx, dudy, dudz
+  real, dimension(:,:,:), allocatable :: dvdx, dvdy, dvdz
+  real, dimension(:,:,:), allocatable :: dwdx, dwdy, dwdz
+  real :: rdudx,rdudy,rdudz,rdvdx,rdvdy,rdvdz,rdwdx
+  real :: rdwdy,rdwdz,rvort_x,rvort_y,rvort_z
+  real, dimension(:,:,:), allocatable :: vorticity_x
+  real, dimension(:,:,:), allocatable :: vorticity_y
+  real, dimension(:,:,:), allocatable :: vorticity_z
+  real, dimension(:,:,:), allocatable :: vorticity_mag
+  real, dimension(:,:,:), allocatable :: omega,localOmega,Qmethod,QGlob
+  real, dimension(:,:,:), allocatable :: omg_x,omg_y,omg_z, omgGradXRortex
+  real, dimension(:,:,:), allocatable :: omgLoc_x,omgLoc_y,omgLoc_z,QLoc_x,QLoc_y,QLoc_z
+  real, dimension(:,:,:), allocatable :: omg_xx,omg_xy,omg_xz
+  real, dimension(:,:,:), allocatable :: omg_yx,omg_yy,omg_yz
+  real, dimension(:,:,:), allocatable :: omg_zx,omg_zy,omg_zz
+  real, dimension(:,:,:), allocatable :: rortex_x
+  real, dimension(:,:,:), allocatable :: rortex_y
+  real, dimension(:,:,:), allocatable :: rortex_z
+  real, dimension(:,:,:), allocatable :: isLocExtrOmg
+  real, dimension(:,:,:), allocatable :: rortexEigr
+  real, dimension(:,:,:), allocatable :: rortex_mag, lamb_ci,rortexGlob_mag
+  real,dimension (:,:,:), allocatable :: rortex_mag_x,rortex_mag_y, rortex_mag_z
+  real :: vor(3),vrtmp(3), rorMag,normljm,normljm2,ljmtmp,ljmtmp2
 
   character(100) :: gridfilename, funcfilename, outputfilename
   character(100) :: outputfilename1
@@ -78,61 +69,60 @@ program DNSUTA_extract
   character(100) :: msg
   integer :: nvar
 
-  real(8) :: aaa
-  real(8) :: bbb
+  real :: aaa
+  real :: bbb
 
-  real(8) :: thljm, qljm,rljm,pi
-  real(8) :: omega_eps
+  real :: thljm, qljm,rljm,pi
+  real :: omega_eps
 
   real(8) :: vort_2
 
-  real(8) :: u_xi, u_eta, u_zeta, u_xiR, u_etaR,u_zetaR
-  real(8) :: v_xi, v_eta, v_zeta, u_xiQ, u_etaQ,u_zetaQ
-  real(8) :: w_xi, w_eta, w_zeta
+  real :: u_xi, u_eta, u_zeta, u_xiR, u_etaR,u_zetaR
+  real :: v_xi, v_eta, v_zeta, u_xiQ, u_etaQ,u_zetaQ
+  real :: w_xi, w_eta, w_zeta
 
-  real(8) :: x_xi, x_eta, x_zeta
-  real(8) :: y_xi, y_eta, y_zeta
-  real(8) :: z_xi, z_eta, z_zeta
+  real :: x_xi, x_eta, x_zeta
+  real :: y_xi, y_eta, y_zeta
+  real :: z_xi, z_eta, z_zeta
 
-  real(8) :: xi_x, xi_y, xi_z
-  real(8) :: eta_x, eta_y, eta_z
-  real(8) :: zeta_x, zeta_y, zeta_z
+  real :: xi_x, xi_y, xi_z
+  real :: eta_x, eta_y, eta_z
+  real :: zeta_x, zeta_y, zeta_z
 
-  real(8) :: det
+  real :: det
 
-  real(8) :: a(3,3), Aljm(3,3), Matljm(3,3)
+  real :: a(3,3), Aljm(3,3), Matljm(3,3)
 
-  real(8) :: t1, t2, t3, t4, t5, t6
+  real :: t1, t2, t3, t4, t5, t6
 
-  real(8) :: aa, bb, cc
-  real(8) :: delta
-  real(8) :: tt(3, 3)
+  real :: aa, bb, cc
+  real :: delta
+  real :: tt(3, 3)
 
-  complex(8) :: eig1c, eig2c
-  real(8) :: eig3r
+  complex :: eig1c, eig2c
+  real :: eig3r
 
-  real(8) :: qq, rr, root11,root22,root33
-  real(8) :: aaaa, bbbb
+  real :: qq, rr, root11,root22,root33
+  real :: aaaa, bbbb
 
+  real :: vr(3)
+  real :: temp
+  real :: vg(3,3)
 
-  real(8) :: vr(3)
-  real(8) :: temp
-  real(8) :: vg(3,3)
-
-  real(8) :: alpha, beta
+  real :: alpha, beta
 
   ! Modified Omega Liutex variables
-  real(8), dimension(:,:,:), allocatable :: omega_l
-  real(8), dimension(:,:,:), allocatable :: lambda_cr, lambda_r
-  real(8) :: maxbeta_alpha, omega_l_eps
+  real, dimension(:,:,:), allocatable :: omega_l
+  real, dimension(:,:,:), allocatable :: lambda_cr, lambda_r
+  real :: maxbeta_alpha, omega_l_eps
 
-  real(8), dimension(:,:,:), allocatable :: o_alpha, o_beta
+  real, dimension(:,:,:), allocatable :: o_alpha, o_beta
 
-  real(8), parameter :: z0(3) = (/0.0, 0.0, 1.0/)
-  real(8) :: rm
-  real(8) :: qqq(3,3)
+  real, parameter :: z0(3) = (/0.0, 0.0, 1.0/)
+  real :: rm
+  real :: qqq(3,3)
 
-  real(8) :: delta1, delta2, delta3
+  real :: delta1, delta2, delta3
 
   character(6) :: chars
 
@@ -1653,13 +1643,13 @@ end program DNSUTA_extract
 subroutine cal_rortex(a, vor, vr,rorMag)
   implicit none
 
-  real(8), intent(in) :: a(3,3)
-  real(8), intent(in) :: vor(3)
-  real(8), intent(out) :: vr(3), rorMag
+  real, intent(in) :: a(3,3)
+  real, intent(in) :: vor(3)
+  real, intent(out) :: vr(3), rorMag
 
-  real(8):: aa,bb,cc,delta,rr,aaaa,bbbb,qq,delta1,delta2,delta3,temp
-  complex(8):: eig1c,eig2c,eig3r
-  real(8) :: tt(3,3)
+  real:: aa,bb,cc,delta,rr,aaaa,bbbb,qq,delta1,delta2,delta3,temp
+  complex:: eig1c,eig2c,eig3r
+  real :: tt(3,3)
           ! Cubic Formula
           ! Reference: Numerical Recipes in FORTRAN 77, Second Edition
           ! 5.6 Quadratic and Cubic Equations
@@ -1774,17 +1764,17 @@ subroutine rotation(u, v, r)
 
   implicit none
 
-  real(8), intent(in) :: u(3)
-  real(8), intent(in) :: v(3)
-  real(8), intent(out) :: r(3, 3)
+  real, intent(in) :: u(3)
+  real, intent(in) :: v(3)
+  real, intent(out) :: r(3, 3)
 
-  real(8) :: a(3)
-  real(8) :: aa
-  real(8) :: t
-  real(8) :: alpha
-  real(8) :: c, s
+  real :: a(3)
+  real :: aa
+  real :: t
+  real :: alpha
+  real :: c, s
 
-  real(8), parameter :: eps = 1.0e-10
+  real, parameter :: eps = 1.0e-10
 
   ! a = u x v
   a(1) = u(2)*v(3)-u(3)*v(2)

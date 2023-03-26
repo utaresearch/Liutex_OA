@@ -32,15 +32,18 @@ program main
     logical :: lexist
 
     !! Other stuff
+    real(8), dimension(:,:,:,:,:), allocatable :: r_mag_hessian
     real(8), dimension(:,:,:,:), allocatable :: f, f2
     real(8), dimension(:,:,:,:), allocatable :: r, lmg
     real(8), dimension(:,:,:), allocatable :: x, y, z
     real(8), dimension(:,:,:), allocatable :: r_mag, omega_l
     real(8), dimension(:,:,:), allocatable :: liutex_core_x, liutex_core_y, liutex_core_z
     real(8), dimension(:,:,:), allocatable :: div_lmg, div_r
+    real(8), dimension(3,3) :: h
     real(8), dimension(3) :: lmg_vec, r_vec
+    real(8), dimension(3) :: lmg_cross_r
     real(8) :: lmg_norm, r_norm
-    real(8) :: omega_l_tol, dot_tol, div_r_tol, div_lmg_tol
+    real(8) :: omega_l_tol, dot_tol, div_r_tol, div_lmg_tol, cross_tol
     logical :: omega_l_condition, div_lmg_condition, div_r_condition, conditions
     integer :: imax, jmax, kmax, nx
     integer :: i, j, k
@@ -188,37 +191,37 @@ program main
         allocate(liutex_core_y(imax,jmax,kmax))   !! New Liutex Core Vector
         allocate(liutex_core_z(imax,jmax,kmax))   !! New Liutex Core Vector
         
-        !! Normalize vector fields
-        do k = 1, kmax
-            do j = 1, jmax
-                do i = 1, imax
-                    !! Create vectors.
-                    lmg_vec = (/ lmg(i,j,k,1), lmg(i,j,k,2), lmg(i,j,k,3) /)
-                    r_vec = (/ r(i,j,k,1), r(i,j,k,2), r(i,j,k,3) /)
+        ! !! Normalize vector fields
+        ! do k = 1, kmax
+        !     do j = 1, jmax
+        !         do i = 1, imax
+        !             !! Create vectors.
+        !             lmg_vec = (/ lmg(i,j,k,1), lmg(i,j,k,2), lmg(i,j,k,3) /)
+        !             r_vec = (/ r(i,j,k,1), r(i,j,k,2), r(i,j,k,3) /)
 
-                    lmg_norm = norm2(lmg_vec)
-                    r_norm = norm2(r_vec)
+        !             lmg_norm = norm2(lmg_vec)
+        !             r_norm = norm2(r_vec)
 
-                    !! Check if the norm is zero and if not then divide.
-                    if (lmg_norm .ne. 0.d0) then
-                        lmg(i,j,k,1) = lmg(i,j,k,1) / lmg_norm
-                        lmg(i,j,k,2) = lmg(i,j,k,2) / lmg_norm
-                        lmg(i,j,k,3) = lmg(i,j,k,3) / lmg_norm
-                    end if
+        !             !! Check if the norm is zero and if not then divide.
+        !             if (lmg_norm .ne. 0.d0) then
+        !                 lmg(i,j,k,1) = lmg(i,j,k,1) / lmg_norm
+        !                 lmg(i,j,k,2) = lmg(i,j,k,2) / lmg_norm
+        !                 lmg(i,j,k,3) = lmg(i,j,k,3) / lmg_norm
+        !             end if
 
-                    if (r_norm .ne. 0.d0) then
-                        r(i,j,k,1) = r(i,j,k,1) / r_norm
-                        r(i,j,k,2) = r(i,j,k,2) / r_norm
-                        r(i,j,k,3) = r(i,j,k,3) / r_norm
-                    end if 
+        !             if (r_norm .ne. 0.d0) then
+        !                 r(i,j,k,1) = r(i,j,k,1) / r_norm
+        !                 r(i,j,k,2) = r(i,j,k,2) / r_norm
+        !                 r(i,j,k,3) = r(i,j,k,3) / r_norm
+        !             end if 
 
-                end do
-            end do 
-        end do
+        !         end do
+        !     end do 
+        ! end do
         
         write(*,*) 'Finding the Liutex Core Vector Field'
 
-        pointfilename = 'data/corepoints_'//trim(datafileprefix)//'_'//chars//'.dat'
+        pointfilename = 'data/corepoints_'//trim(datafileprefix)//'_'//chars//'.csv'
         open(fout1, file=trim(pointfilename), form='formatted', action='write')
 
         liutex_core_x = 0.d0
@@ -228,9 +231,10 @@ program main
         allocate(div_lmg(imax,jmax,kmax))
         allocate(div_r(imax,jmax,kmax))
 
-        !! Finding the divergence of vectors.
-        div_lmg = divergence(abs(lmg(:,:,:,1)), abs(lmg(:,:,:,2)), abs(lmg(:,:,:,3)), x, y, z, imax, jmax, kmax)
-        ! div_r   = divergence(abs(r(:,:,:,1)), abs(r(:,:,:,2)), abs(r(:,:,:,3)), x, y, z, imax, jmax, kmax)
+        !! Finding the Hessian Matrix
+        allocate(r_mag_hessian(imax,jmax,kmax,3,3))
+
+        r_mag_hessian = hessian_mat(r_mag, x, y, z, imax, jmax, kmax)
 
         liutex_core_counter = 0
 
@@ -240,6 +244,7 @@ program main
         dot_tol     = 1.d-6         !! tolerance for dot product
         div_r_tol   = 1.d-6         !! tolerance for divergence of liutex condition
         div_lmg_tol = 1.d-4         !! tolerance for divergence of liutex gradient condition
+        cross_tol   = 0.d0
 
         do k = 1, kmax
             do j = 1, jmax
@@ -249,14 +254,7 @@ program main
 
                     if (omega_l_condition) then
 
-                        ! div_r_condition = (abs(div_r(i,j,k)) < div_r_tol)
-                        div_lmg_condition = (abs(div_lmg(i,j,k)) < div_lmg_tol)
-
-                        ! conditions = div_r_condition
-                        conditions = div_lmg_condition
-                        ! conditions = div_lmg_condition .and. div_r_condition
-
-                        if (conditions) then
+                        if (negative_def(r_mag_hessian(i,j,k,:,:))) then
 
                             !! Liutex Core Line (liutex_core) vector components
                             liutex_core_x(i,j,k) = r_mag(i,j,k) * lmg(i,j,k,1)
@@ -266,7 +264,7 @@ program main
                             liutex_core_counter = liutex_core_counter + 1
 
                             !! Write liutex core points to file
-                            ! write(fout1,*) x(i,j,k), y(i,j,k), z(i,j,k)
+                            write(fout1,*) x(i,j,k),',', y(i,j,k),',', z(i,j,k)
 
                         end if
 
