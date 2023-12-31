@@ -16,16 +16,18 @@ module liutex_mod
     contains
 
     !! Subroutines
-    subroutine liutex(a, vor, liutex_vec, liutex_mag)
+    subroutine liutex(a, liutex_vec, liutex_mag)
         implicit none
 
+        real(8), dimension(3), parameter :: z0 = (/0.0, 0.0, 1.0/)
+
         real(8), dimension(3,3), intent(in) :: a            ! Velocity gradient tensor
-        real(8), dimension(3), intent(in) :: vor            ! Vorticity
         real(8), dimension(3), intent(out) :: liutex_vec    ! Liutex direction vector 
         real(8), intent(out) :: liutex_mag                  ! Liutex magnitude
       
-        real(8), dimension(3,3) :: tt
+        real(8), dimension(3,3) :: tt, qqq, vg
         real(8) :: aa, bb, cc, delta, rr, aaaa, bbbb, qq, delta1, delta2, delta3, temp
+        real(8) :: alpha, beta
         real(8) :: eig3r
         complex(8) :: eig1c, eig2c 
 
@@ -38,7 +40,7 @@ module liutex_mod
         ! cubic equation
         ! x**3 + aa * x**2 + bb * x + cc = 0
 
-        ! coefficients of characteristic equation
+        ! coefficients of characteristic equation for the velocity gradient tensor.
 
         aa = -(a(1,1) + a(2,2) + a(3,3))
 
@@ -53,15 +55,15 @@ module liutex_mod
         ! discriminant of characteristic equation
         delta = 18.d0*aa*bb*cc - 4.d0*aa**3 * cc + aa**2 * bb**2 - 4.d0*bb**3 - 27.d0*cc**2
 
-        qq = (aa**2.d0 - 3.d0*bb) / 9.d0
-        rr = (2.d0*aa**3 - 9.d0*aa*bb + 27.d0*cc) / 54.d0
-
         ! alleviate round error
         delta = -delta / 108.d0
         liutex_vec = 0.d0
         liutex_mag = 0.d0
 
         if (delta > 0.d0) then ! one real root and two complex conjugate roots
+
+            qq = (aa**2.d0 - 3.d0*bb) / 9.d0
+            rr = (2.d0*aa**3 - 9.d0*aa*bb + 27.d0*cc) / 54.d0
 
             aaaa = -sign(1.d0, rr) * (abs(rr)+sqrt(delta))**(1.d0/3.d0)
 
@@ -83,6 +85,7 @@ module liutex_mod
 
             if (delta1 == 0.d0 .and. delta2 == 0.d0 .and. delta3 == 0.d0) then
                 write(*,*) 'ERROR: delta1 = delta2 = delta3 = 0.0'
+                write(*,*) 'REAL EIG VALUE: ', eig3r
                 write(*,*) a(1,1)-eig3r,  a(1,2),       a(1,3)
                 write(*,*) a(2,1),        a(2,2)-eig3r, a(2,3)
                 write(*,*) a(3,1),        a(3,2),       a(3,3)-eig3r
@@ -118,19 +121,252 @@ module liutex_mod
             liutex_vec(1) = liutex_vec(1) / temp
             liutex_vec(2) = liutex_vec(2) / temp
             liutex_vec(3) = liutex_vec(3) / temp
-
-            temp = dot_product(vor, liutex_vec)
             
-            liutex_vec(1) = sign(1.d0,temp) * liutex_vec(1)
-            liutex_vec(2) = sign(1.d0,temp) * liutex_vec(2)
-            liutex_vec(3) = sign(1.d0,temp) * liutex_vec(3)
+            call rotation(z0, liutex_vec, qqq)
 
-            liutex_mag = (temp - sqrt(temp**2 - 4.d0*aimag(eig2c)*aimag(eig2c)))
+            vg = matmul(transpose(qqq), a)
+            vg = matmul(vg, qqq)
+
+            alpha = 0.5d0 * sqrt((vg(2,2) - vg(1,1))**2 + (vg(2,1) + vg(1,2))**2)
+            beta  = 0.5d0 * (vg(2,1) - vg(1,2))
+
+            if(beta**2 > alpha**2) then
+
+                if(beta > 0.0) then
+                    liutex_mag = 2.d0 * (beta - alpha)
+                    liutex_vec(1) = liutex_mag * liutex_vec(1)
+                    liutex_vec(2) = liutex_mag * liutex_vec(2)
+                    liutex_vec(3) = liutex_mag * liutex_vec(3)
+                else
+                    liutex_mag = 2.d0 * (beta + alpha)
+                    liutex_vec(1) = liutex_mag * liutex_vec(1)
+                    liutex_vec(2) = liutex_mag * liutex_vec(2)
+                    liutex_vec(3) = liutex_mag * liutex_vec(3)
+                end if
+
+            else
+                liutex_vec(1) = 0.d0
+                liutex_vec(2) = 0.d0
+                liutex_vec(3) = 0.d0
+            end if
+
+            liutex_mag = sqrt(liutex_vec(1)**2 + liutex_vec(2)**2 + liutex_vec(3)**2)
+        else
+            liutex = 0;
         end if
-      
+
     end subroutine liutex
 
+    subroutine rotation(u, v, r)
+        !-------------------------------------------------------------------------------
+        ! calculate rotation matrix r which rotates unit vector u to unit vector v
+        !-------------------------------------------------------------------------------
+        
+        implicit none
+
+        real(8), parameter :: eps = 1.0d-10
+    
+        real(8), dimension(3), intent(in) :: u, v
+        real(8), dimension(3,3), intent(out) :: r
+    
+        real(8), dimension(3) :: a
+        real(8) :: aa
+        real(8) :: t
+        real(8) :: alpha
+        real(8) :: c, s
+
+    
+        ! a = u x v
+        a(1) = u(2)*v(3) - u(3)*v(2)
+        a(2) = u(3)*v(1) - u(1)*v(3)
+        a(3) = u(1)*v(2) - u(2)*v(1)
+    
+        ! norm
+        aa = sqrt(a(1)**2 + a(2)**2 + a(3)**2)
+        
+        if(aa < eps) then
+            r = 0.d0
+            
+            r(1,1) = 1.d0
+            r(2,2) = 1.d0
+            r(3,3) = 1.d0
+        else
+            a = a/aa
+            t = u(1)*v(1)+u(2)*v(2)+u(3)*v(3)
+            
+            if(t > 1.d0) t = 1.d0
+            if(t < -1.d0) t = -1.d0
+            
+            alpha = acos(t)
+        
+            c = cos(alpha)
+            s = sin(alpha)
+        
+            r(1,1) = a(1)**2 * (1.d0 - c) + c
+            r(1,2) = a(1) * a(2)*(1.d0 - c) - a(3) * s
+            r(1,3) = a(1) * a(3) * (1.d0 - c) + a(2) * s
+        
+            r(2,1) = a(2) * a(1) * (1.d0 - c) + a(3)*s
+            r(2,2) = a(2)**2 * (1.d0 - c) + c
+            r(2,3) = a(2) * a(3) * (1.d0 - c) - a(1) * s
+        
+            r(3,1) = a(3) * a(1) * (1.d0 - c) - a(2) * s
+            r(3,2) = a(3) * a(2) * (1.d0 - c) + a(1) * s
+            r(3,3) = a(3)**2 * (1.d0 - c) + c
+        end if
+        
+    end subroutine rotation
+
+
+
+    ! subroutine modified_omega_liutex(max_beta_alpha, mod_omega_liutex_vec, mod_omega_liutex_mag)
+    !     !!! Calculates the 3D Modified Omega Liutex vector and magnitude using
+    !     !!! the velocity gradient tensor (3x3 matrix).
+    !     !!! University of Texas at Arlington - Department of Mathematics
+    !     !!! Author: Oscar Alvarez
+    !     !!! Email: oscar.alvarez@uta.edu
+
+    !     real(8), dimension(3), intent(out) :: mod_omega_liutex_vec  ! Modified Omega Liutex Vector
+    !     real(8), intent(out) :: mod_omega_liutex_mag                ! Modified Omega Liutex Magnitude
+
+    !     mod_omega_liutex_mag = o_beta**2 / (o_beta**2 + o_alpha**2 + lambda_cr**2   &
+    !                                         + 0.5d0 * lambda_r**2                   &
+    !                                         + epsilon * maxbeta_alpha)
+    
+    ! end subroutine modified_omega_liutex
+
+
     !! Functions
+
+! function beta_alpha(a)
+!     implicit none
+
+!     real(8), parameter :: epsilon = 1.d-4
+
+!     real(8), dimension(3,3), intent(in) :: a                    ! velocity_gradient_tensor
+
+!     real(8), dimension(3,3) :: tt, qqq, vg
+!     real(8) :: aa, bb, cc, aaaa, bbbb, o_alpha, o_beta, maxbeta_alpha
+!     real(8) :: delta, delta1, delta2, delta3, qq, rr
+
+!     real(8), dimension(3) :: vr, z0
+!     real(8) :: eig3r, temp
+!     real(8) :: lambda_cr, lambda_r
+!     complex(8) :: eig1c, eig2c
+
+!     integer :: i, j, k
+
+!     !---------------------------------------------------------------------
+!     ! Cubic Formula
+!     ! Reference: Numerical Recipes in FORTRAN 77, Second Edition
+!     ! 5.6 Quadratic and Cubic Equations
+!     ! Page 179
+!     !---------------------------------------------------------------------
+
+!     ! cubic equation
+!     ! x**3 + aa * x**2 + bb * x + cc = 0
+
+!     ! coefficients of characteristic equation
+
+!     aa = -( a(1,1) + a(2,2) + a(3,3) )
+
+!     tt = matmul(a,a)
+
+!     bb = -0.5d0 * ( tt(1,1) + tt(2,2) + tt(3,3) - (a(1,1) + a(2,2) + a(3,3))**2 )
+
+!     cc = -( a(1,1) * (a(2,2)*a(3,3) - a(2,3)*a(3,2))                          &
+!             -a(1,2) * (a(2,1)*a(3,3) - a(2,3)*a(3,1))                         &
+!             +a(1,3) * (a(2,1)*a(3,2) - a(2,2)*a(3,1)) )
+
+!     ! discriminant of characteristic equation
+!     delta = 18.d0*aa*bb*cc - 4.d0*aa**3*cc + aa**2*bb**2 - 4.d0*bb**3 - 27.d0*cc**2
+
+!     qq = (aa**2 - 3.d0*bb) / 9.d0
+!     rr = (2.d0*aa**3 - 9.d0*aa*bb + 27.d0*cc) / 54.d0
+
+!     ! delta = rr**2 - qq**3
+!     ! alleviate round error
+!     delta = -delta / 108.d0
+
+!     if(delta > 0.d0) then ! one real root and two complex conjugate roots
+
+!         aaaa = -sign(1.d0, rr)*(abs(rr) + sqrt(delta))**(1.0d0/3.0d0)
+
+!         if(aaaa == 0.0d0) then
+!             bbbb = 0.0d0
+!         else
+!             bbbb = qq / aaaa
+!         end if
+
+!         eig1c = cmplx(-0.5d0*(aaaa+bbbb) - aa/3.d0, 0.5d0*sqrt(3.d0)*(aaaa-bbbb), kind=8)
+!         eig2c = cmplx(real(eig1c), -aimag(eig1c), kind=8)
+!         eig3r = aaaa + bbbb - (aa / 3.d0)
+
+!         ! real right eigenvector
+
+!         delta1 = (a(1,1)-eig3r)*(a(2,2)-eig3r) - a(2,1)*a(1,2)
+!         delta2 = (a(2,2)-eig3r)*(a(3,3)-eig3r) - a(2,3)*a(3,2)
+!         delta3 = (a(1,1)-eig3r)*(a(3,3)-eig3r) - a(1,3)*a(3,1)
+
+!         if(delta1 == 0.d0 .and. delta2 == 0.d0 .and. delta3 == 0.d0) then
+!             write(*,*) 'ERROR: delta1 = delta2 = delta3 = 0.0'
+!             write(*,*) a(1,1)-eig3r,  a(1,2),       a(1,3)
+!             write(*,*) a(2,1),        a(2,2)-eig3r, a(2,3)
+!             write(*,*) a(3,1),        a(3,2),       a(3,3)-eig3r
+!             write(*,*) i, j, k
+!             stop
+!         end if
+
+!         if (abs(delta1) >= abs(delta2) .and. abs(delta1) >= abs(delta3)) then
+
+!             vr(1) = (-(a(2,2)-eig3r)*a(1,3) +         a(1,2)*a(2,3))/delta1
+!             vr(2) = (         a(2,1)*a(1,3) - (a(1,1)-eig3r)*a(2,3))/delta1
+!             vr(3) = 1.d0
+
+!         else if (abs(delta2) >= abs(delta1) .and. abs(delta2) >= abs(delta3)) then
+
+!             vr(1) = 1.d0
+!             vr(2) = (-(a(3,3)-eig3r)*a(2,1) +         a(2,3)*a(3,1))/delta2
+!             vr(3) = (         a(3,2)*a(2,1) - (a(2,2)-eig3r)*a(3,1))/delta2
+
+!         else if (abs(delta3) >= abs(delta1) .and. abs(delta3) >= abs(delta2)) then
+
+!             vr(1) = (-(a(3,3)-eig3r)*a(1,2) +         a(1,3)*a(3,2))/delta3
+!             vr(2) = 1.d0
+!             vr(3) = (         a(3,1)*a(1,2) - (a(1,1)-eig3r)*a(3,2))/delta3
+
+!         else
+!             write(*,*) 'ERROR: '
+!             write(*,*) delta1, delta2, delta3
+!             stop
+!         end if
+
+!         temp = norm2(vr)
+
+!         vr(1) = vr(1)/temp
+!         vr(2) = vr(2)/temp
+!         vr(3) = vr(3)/temp
+
+!         call rotation(z0, vr, qqq)
+
+!         vg = matmul(transpose(qqq), a)
+!         vg = matmul(vg, qqq)
+
+!         o_alpha = 0.5d0 * sqrt((vg(2,2) - vg(1,1))**2 + (vg(2,1) + vg(1,2))**2)
+!         o_beta  = 0.5d0 * (vg(2,1) - vg(1,2))
+
+!         lambda_cr = real(eig1c)
+!         lambda_r = eig3r
+
+!     else
+!         o_alpha = 0.0
+!         o_beta  = 0.0
+!     end if
+
+!     beta_alpha = o_beta**2 - o_alpha**2
+    
+! end function beta_alpha
+
 
     function vorticity(nabla_v) result(vor)
         !!! Calculate vorticity vector from velocity gradient tensor
@@ -145,7 +381,7 @@ module liutex_mod
     end function vorticity
 
 
-    function velocity_gradient(u, v, w, x, y, z, imax, jmax, kmax) result(nabla_v)
+    function velocity_gradient_tensor(u, v, w, x, y, z, imax, jmax, kmax) result(nabla_v)
         !!! Calculates the velocity gradient tensor using the u, v, and w velocities.
         implicit none
         
@@ -262,8 +498,12 @@ module liutex_mod
                     det =   x_xi * (y_eta*z_zeta-y_zeta*z_eta)                               &
                             - x_eta * (y_xi*z_zeta-y_zeta*z_xi)                              &
                             + x_zeta * (y_xi*z_eta-y_eta*z_xi)
-        
-                    det = 1.0 / det
+                    
+                    if (det == 0.d0) then
+                        det = 0.d0
+                    else
+                        det = 1.d0 / det
+                    end if
         
                     xi_x = det*(y_eta*z_zeta - y_zeta*z_eta)
                     xi_y = det*(x_zeta*z_eta - x_eta*z_zeta)
@@ -295,143 +535,7 @@ module liutex_mod
             end do
         end do
 
-    end function velocity_gradient
-
-
-    function interpolation(f_x, f_y, f_z, x, y, z, i, j, k, imax, jmax, kmax) result(big_f)
-        !!!!!! UNFINISHED !!!!!!!!!!!
-        !! Integrates a vector valued function f = (f_x, f_y, f_z) by the method described
-        !! in Fudan paper.
-        implicit none
-        integer, intent(in) :: i, j, k, imax, jmax, kmax
-        real(8), dimension(imax,jmax,kmax), intent(in) :: f_x, f_y, f_z, x, y, z
-        real(8), dimension(imax,jmax,kmax,3) :: big_f
-
-        real(8), dimension(8) :: alpha
-        real(8), dimension(8) :: x_s, y_s, z_s, fx_s, fy_s, fz_s
-        real(8), dimension(3) :: ds
-        real(8), dimension(3) :: interpolated_sum
-        real(8) :: x_i, y_i, z_i
-        real(8) :: fx_i, fy_i, fz_i
-        logical :: x_boundary_stop, y_boundary_stop, z_boundary_stop, boundary_stop
-        logical :: function_value_stop
-        integer :: max_n
-        integer :: n, s
-
-        !! Max number of iterations/generated seed points
-        max_n = 100
-
-        !! Distance to be incremented when interpolating values.
-        ds(1) = (x(i+1,j+1,k+1) - x(i,j,k)) / 10.d0
-        ds(2) = (y(i+1,j+1,k+1) - y(i,j,k)) / 10.d0
-        ds(3) = (z(i+1,j+1,k+1) - z(i,j,k)) / 10.d0
-
-        !! Building Volume control unit. Each index is a vertex of the control unit.
-        x_s(1) = x(i,j,k)
-        x_s(2) = x(i+1,j,k)
-        x_s(3) = x(i+1,j+1,k)
-        x_s(4) = x(i,j+1,k)
-        x_s(5) = x(i,j,k+1)
-        x_s(6) = x(i+1,j,k+1)
-        x_s(7) = x(i+1,j+1,k+1)
-        x_s(8) = x(i,j+1,k+1)
-
-        y_s(1) = y(i,j,k)
-        y_s(2) = y(i+1,j,k)
-        y_s(3) = y(i+1,j+1,k)
-        y_s(4) = y(i,j+1,k)
-        y_s(5) = y(i,j,k+1)
-        y_s(6) = y(i+1,j,k+1)
-        y_s(7) = y(i+1,j+1,k+1)
-        y_s(8) = y(i,j+1,k+1)
-
-        z_s(1) = z(i,j,k)
-        z_s(2) = z(i+1,j,k)
-        z_s(3) = z(i+1,j+1,k)
-        z_s(4) = z(i,j+1,k)
-        z_s(5) = z(i,j,k+1)
-        z_s(6) = z(i+1,j,k+1)
-        z_s(7) = z(i+1,j+1,k+1)
-        z_s(8) = z(i,j+1,k+1)
-
-        fx_s(1) = f_x(i,j,k)
-        fx_s(2) = f_x(i+1,j,k)
-        fx_s(3) = f_x(i+1,j+1,k)
-        fx_s(4) = f_x(i,j+1,k)
-        fx_s(5) = f_x(i,j,k+1)
-        fx_s(6) = f_x(i+1,j,k+1)
-        fx_s(7) = f_x(i+1,j+1,k+1)
-        fx_s(8) = f_x(i,j+1,k+1)
-
-        fy_s(1) = f_y(i,j,k)
-        fy_s(2) = f_y(i+1,j,k)
-        fy_s(3) = f_y(i+1,j+1,k)
-        fy_s(4) = f_y(i,j+1,k)
-        fy_s(5) = f_y(i,j,k+1)
-        fy_s(6) = f_y(i+1,j,k+1)
-        fy_s(7) = f_y(i+1,j+1,k+1)
-        fy_s(8) = f_y(i,j+1,k+1)
-
-        fz_s(1) = f_z(i,j,k)
-        fz_s(2) = f_z(i+1,j,k)
-        fz_s(3) = f_z(i+1,j+1,k)
-        fz_s(4) = f_z(i,j+1,k)
-        fz_s(5) = f_z(i,j,k+1)
-        fz_s(6) = f_z(i+1,j,k+1)
-        fz_s(7) = f_z(i+1,j+1,k+1)
-        fz_s(8) = f_z(i,j+1,k+1)
-
-        !! Initializing values (current position/value)
-        x_i = x(i,j,k)
-        y_i = y(i,j,k)
-        z_i = z(i,j,k)
-
-        fx_i = f_x(i,j,k)
-        fy_i = f_y(i,j,k)
-        fz_i = f_y(i,j,k)
-
-        interpolated_sum = 0.d0
-
-        do n = 1, max_n
-
-            !! Stop if we are outside of the calculation domain (control unit).
-            x_boundary_stop = (x_i < x(i,j,k)) .or. (x_i > x(i,j,k))
-            y_boundary_stop = (y_i < y(i,j,k)) .or. (y_i > y(i,j,k))
-            z_boundary_stop = (z_i < z(i,j,k)) .or. (z_i > z(i,j,k))
-            boundary_stop = x_boundary_stop .or. y_boundary_stop .or. z_boundary_stop
-
-            !! Stop if function value is = 0.
-            function_value_stop = (norm2((/fx_i, fy_i, fz_i/)) == 0.d0)
-
-            if (boundary_stop .or. function_value_stop) then
-                exit
-            end if
-
-            !! Interpolate function value
-            do s = 1, 8
-                alpha(s) = (x_s(7) - x_i) * (y_s(7) - y_i) * (z_s(7) - z_i)
-                alpha(s) = alpha(s) / ( (x_s(7) - x_s(s))*(y_s(7)-y_s(s))*(z_s(7)-z_s(s)) )
-
-                interpolated_sum(1) = interpolated_sum(1) + alpha(s)*fx_s(s)
-                interpolated_sum(2) = interpolated_sum(2) + alpha(s)*fy_s(s)
-                interpolated_sum(3) = interpolated_sum(3) + alpha(s)*fz_s(s)
-            end do
-            
-            !! Interpolated values of function.
-            fx_i = interpolated_sum(1)
-            fy_i = interpolated_sum(2)
-            fz_i = interpolated_sum(3)
-
-            !! Position/location of interpolated function value.
-            x_i = x_i + ds(1)*fx_i
-            y_i = y_i + ds(2)*fy_i
-            z_i = z_i + ds(3)*fz_i
-            
-        end do
-            
-
-
-    end function interpolation
+    end function velocity_gradient_tensor
 
 
     function hessian_mat(f, x, y, z, imax, jmax, kmax) result(h_mat)
@@ -877,6 +981,22 @@ module liutex_mod
         are_real = (r*r < q*q*q)
     end function are_roots_real_cubic
 
+    function are_roots_imag_cubic(a, b, c) result(are_imag)
+        !!! Determines if the roots of a cubic polynomical equation 
+        !!! in the form of x^3 + a*x^2 + b*x + c = 0 contain imaginary numbers.
+        implicit none
+        real(8), intent(in) :: a, b, c
+        logical :: are_imag
+        real(8) :: delta
+
+        delta = 18.d0*a*b*c - 4.d0*a*a*a * c + a*a*b*b - 4.d0*b*b*b - 27.d0*c*c
+        delta = -delta / 108.d0
+
+        !! One real root and two complex conjugate roots
+        are_imag = (delta > 0.d0)
+
+    end function
+
 
     function roots_cubic_real(a, b, c) result(root)
         !!! Finds the real roots of a cubic polynomical equation 
@@ -895,6 +1015,63 @@ module liutex_mod
         root(2) = -2.d0*sqrt(q)*cos((theta + 2.d0*pi) / 3.d0) - a / 3.d0
         root(3) = -2.d0*sqrt(q)*cos((theta - 2.d0*pi) / 3.d0) - a / 3.d0
     end function roots_cubic_real
+
+    function real_eig_vec(a, real_eig_val)
+        !! Finds the Real right eigenvector of matrix a.
+        !! a in the application of liutex is the velocity gradient tensor.
+
+        implicit none
+        
+        real(8), dimension(3) :: real_eig_vec
+        real(8), dimension(3,3), intent(in) :: a
+        real(8), intent(in) :: real_eig_val
+
+        real(8) :: delta1, delta2, delta3, temp
+
+        delta1 = (a(1,1) - real_eig_val) * (a(2,2) - real_eig_val) - a(2,1)*a(1,2)
+        delta2 = (a(2,2) - real_eig_val) * (a(3,3) - real_eig_val) - a(2,3)*a(3,2)
+        delta3 = (a(1,1) - real_eig_val) * (a(3,3) - real_eig_val) - a(1,3)*a(3,1)
+
+        if (delta1 == 0.d0 .and. delta2 == 0.d0 .and. delta3 == 0.d0) then
+            write(*,*) 'ERROR: delta1 = delta2 = delta3 = 0.0'
+            write(*,*) 'REAL EIG VALUE: ', real_eig_val
+            write(*,*) a(1,1)-real_eig_val,  a(1,2),       a(1,3)
+            write(*,*) a(2,1),        a(2,2)-real_eig_val, a(2,3)
+            write(*,*) a(3,1),        a(3,2),       a(3,3)-real_eig_val
+            stop
+        end if
+
+        if (abs(delta1) >= abs(delta2) .and. abs(delta1) >= abs(delta3)) then
+
+            real_eig_vec(1) = (-(a(2,2)-real_eig_val)*a(1,3) +         a(1,2)*a(2,3))/delta1
+            real_eig_vec(2) = (         a(2,1)*a(1,3) - (a(1,1)-real_eig_val)*a(2,3))/delta1
+            real_eig_vec(3) = 1.d0
+
+        else if (abs(delta2) >= abs(delta1) .and. abs(delta2) >= abs(delta3)) then
+
+            real_eig_vec(1) = 1.d0
+            real_eig_vec(2) = (-(a(3,3)-real_eig_val)*a(2,1) +         a(2,3)*a(3,1))/delta2
+            real_eig_vec(3) = (         a(3,2)*a(2,1) - (a(2,2)-real_eig_val)*a(3,1))/delta2
+
+        else if (abs(delta3) >= abs(delta1) .and. abs(delta3) >= abs(delta2)) then
+
+            real_eig_vec(1) = (-(a(3,3)-real_eig_val)*a(1,2) +         a(1,3)*a(3,2))/delta3
+            real_eig_vec(2) = 1.d0
+            real_eig_vec(3) = (         a(3,1)*a(1,2) - (a(1,1)-real_eig_val)*a(3,2))/delta3
+
+        else
+            write(*,*) 'ERROR: real eigenvector calculation failed'
+            write(*,*) delta1, delta2, delta3
+            stop
+        end if
+
+        temp = norm2(real_eig_vec)
+
+        real_eig_vec(1) = real_eig_vec(1) / temp
+        real_eig_vec(2) = real_eig_vec(2) / temp
+        real_eig_vec(3) = real_eig_vec(3) / temp
+
+    end function real_eig_vec
 
 
     function roots_cubic_imag(a, b, c) result(root)
