@@ -64,8 +64,8 @@ module liutex_mod
                     q = -0.5d0*(tt(1,1) + tt(2,2) + tt(3,3) - (a(1,1) + a(2,2) + a(3,3))**2)
 
                     r_hat = -( a(1,1) * (a(2,2)*a(3,3)-a(2,3)*a(3,2))                &
-                            - a(1,2) * (a(2,1)*a(3,3)-a(2,3)*a(3,1))              &
-                            + a(1,3) * (a(2,1)*a(3,2)-a(2,2)*a(3,1)) )
+                               - a(1,2) * (a(2,1)*a(3,3)-a(2,3)*a(3,1))              &
+                               + a(1,3) * (a(2,1)*a(3,2)-a(2,2)*a(3,1)) )
 
                     s = (p**2 - 3.d0*q) / 9.d0
                     t = (2.d0*p**3 - 9.d0*p*q + 27.d0*r_hat) / 54.d0
@@ -251,8 +251,8 @@ module liutex_mod
 
 
     subroutine modified_omega_liutex(velocity_gradient_tensor, mod_omega_liutex_vec, mod_omega_liutex_mag, imax, jmax, kmax)
-        !!! Calculates the 3D Modified Omega Liutex vector and magnitude using
-        !!! the velocity gradient tensor (3x3 matrix).
+        !!! Calculates the 3D Modified Omega Liutex vector and magnitude using the velocity 
+        !!! gradient tensor (3x3 matrix) for your grid data of size and dimension(imax, jmax, kmax).
         !!! University of Texas at Arlington - Department of Mathematics
         !!! Author: Oscar Alvarez
         !!! Email: oscar.alvarez@uta.edu
@@ -265,17 +265,11 @@ module liutex_mod
         real(8), dimension(imax,jmax,kmax,3) :: mod_omega_liutex_vec   !! Modified Omega Liutex Vector
         real(8), dimension(imax,jmax,kmax) :: mod_omega_liutex_mag     !! Modified Omega Liutex Magnitude
 
-        real(8), dimension(3,3) :: tt
-        real(8) :: aa, bb, cc
-
-        real(8), dimension(3) :: r, vor
         real(8) :: lambda_cr, lambda_ci, lambda_r
         real(8) :: w_dot_r_2
         
         real(8), dimension(3,3) :: a  !! velocity_gradient_tensor
         real(8) :: max_beta_alpha
-
-        complex(8), dimension(3) :: roots
 
         integer :: i, j, k
 
@@ -285,55 +279,8 @@ module liutex_mod
 
                     a = velocity_gradient_tensor(i,j,k,:,:)
 
-                    ! Cubic Formula
-                    ! Reference: Numerical Recipes in FORTRAN 77, Second Edition
-                    ! 5.6 Quadratic and Cubic Equations
-                    ! Page 179
-                    !---------------------------------------------------------------------
 
-                    ! cubic equation
-                    ! x**3 + aa * x**2 + bb * x + cc = 0
 
-                    ! coefficients of characteristic equation for the velocity gradient tensor.
-
-                    aa = -(a(1,1) + a(2,2) + a(3,3))
-
-                    tt = matmul(a,a)
-
-                    bb = -0.5d0*(tt(1,1) + tt(2,2) + tt(3,3) - (a(1,1) + a(2,2) + a(3,3))**2)
-
-                    cc = -( a(1,1) * (a(2,2)*a(3,3)-a(2,3)*a(3,2))                &
-                            - a(1,2) * (a(2,1)*a(3,3)-a(2,3)*a(3,1))              &
-                            + a(1,3) * (a(2,1)*a(3,2)-a(2,2)*a(3,1)) )
-
-                    if (are_roots_real_cubic(aa, bb, cc)) then
-                        mod_omega_liutex_vec = 0.d0
-                        mod_omega_liutex_mag = 0.d0
-                        return
-                    end if
-
-                    !! Returns the real eigenvalue 1st and the complex eigenvalues 2nd and 3rd.
-                    roots = roots_cubic_imag(aa, bb, cc)
-
-                    !! Real and Complex part of the complex eigenvalues
-                    lambda_cr = real(roots(2))
-                    lambda_ci = imag(roots(2))
-
-                    !! Get the real eigenvector using the real eigenvalue.
-                    lambda_r = real(roots(1))
-                    r = real_eig_vec(a, lambda_r)
-
-                    vor = vorticity(a)
-
-                    !! Calculating the Modified Omega Liutex Magnitude and vector.
-                    w_dot_r_2 = dot_product(vor, r)**2
-                    
-                    mod_omega_liutex_mag = w_dot_r_2 /  &
-                                        (2.d0        &
-                                            * (w_dot_r_2 - 2.d0*lambda_ci*lambda_ci + 2.d0*lambda_cr*lambda_cr + lambda_r*lambda_r) &
-                                            + epsilon)
-
-                    mod_omega_liutex_vec = mod_omega_liutex_mag * r
                 end do
             end do
         end do
