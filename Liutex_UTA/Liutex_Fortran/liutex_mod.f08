@@ -252,26 +252,36 @@ module liutex_mod
 
     subroutine modified_omega_liutex(velocity_gradient_tensor, mod_omega_liutex_vec, mod_omega_liutex_mag, imax, jmax, kmax)
         !!! Calculates the 3D Modified Omega Liutex vector and magnitude using the velocity 
-        !!! gradient tensor (3x3 matrix) for your grid data of size and dimension(imax, jmax, kmax).
+        !!! gradient tensor (3x3 matrix) for grid data of size and dimension(imax, jmax, kmax).
         !!! University of Texas at Arlington - Department of Mathematics
         !!! Author: Oscar Alvarez
         !!! Email: oscar.alvarez@uta.edu
         implicit none
 
-        real(8), parameter :: epsilon = 1.d-3
+        real(8), parameter :: b_0 = 1.d-3
         
         integer, intent(in) :: imax, jmax, kmax
         real(8), dimension(imax,jmax,kmax,3,3), intent(in) :: velocity_gradient_tensor        
         real(8), dimension(imax,jmax,kmax,3) :: mod_omega_liutex_vec   !! Modified Omega Liutex Vector
         real(8), dimension(imax,jmax,kmax) :: mod_omega_liutex_mag     !! Modified Omega Liutex Magnitude
 
-        real(8) :: lambda_cr, lambda_ci, lambda_r
-        real(8) :: w_dot_r_2
-        
-        real(8), dimension(3,3) :: a  !! velocity_gradient_tensor
-        real(8) :: max_beta_alpha
+		real(8), dimension(imax,jmax,kmax,3) :: normalized_real_eigvec
+        real(8), dimension(imax,jmax,kmax) :: lambda_cr, lambda_r, alpha, beta
+		
+        real(8), dimension(3,3) :: a    !! velocity_gradient_tensor
+		real(8), dimension(3,3) :: tt, rotation_matrix, rotated_vel_grad, 
+		real(8), dimension(3) :: z_0, r_star, w, 
+
+		real(8) :: p, q, r_hat, s, t, delta, aa, b, delta1, delta2, delta3, norm_r_star, eig3r, w_dot_r_2, denominator
+        real(8) :: max_beta_alpha, epsilon
+		
+		complex(8) :: eig1c, eig2c
 
         integer :: i, j, k
+
+		z_0 = (/ 0.d0, 0.d0, 1.d0 /)
+		
+        max_beta_alpha = 0.d0
 
         do k = 1, kmax
             do j = 1, jmax
@@ -279,20 +289,135 @@ module liutex_mod
 
                     a = velocity_gradient_tensor(i,j,k,:,:)
 
+                    !! Cubic Formula
+                    !! Reference: Numerical Recipes in FORTRAN 77, Second Edition
+                    !! 5.6 Quadratic and Cubic Equations
+                    !! Page 179
+                    !!---------------------------------------------------------------------
 
+                    !! cubic equation
+                    !! x**3 + aa * x**2 + bb * x + cc = 0
 
+                    !! coefficients of characteristic equation
+
+                    p = -(a(1,1) + a(2,2) + a(3,3))
+
+                    tt = matmul(a,a)
+
+                    q = -0.5d0*(tt(1,1) + tt(2,2) + tt(3,3) - (a(1,1) + a(2,2) + a(3,3))**2)
+
+                    r_hat = -( a(1,1) * (a(2,2)*a(3,3)-a(2,3)*a(3,2))                &
+                               - a(1,2) * (a(2,1)*a(3,3)-a(2,3)*a(3,1))              &
+                               + a(1,3) * (a(2,1)*a(3,2)-a(2,2)*a(3,1)) )
+
+                    s = (p**2 - 3.d0*q) / 9.d0
+                    t = (2.d0*p**3 - 9.d0*p*q + 27.d0*r_hat) / 54.d0
+
+                    delta = t**2 - s**3
+                    
+                    if (delta > 0.d0) then ! one real root and two complex conjugate roots
+
+                        aa = -sign(1.d0, t) * ( abs(t) + sqrt(delta) )**(1.d0/3.d0)
+
+                        if (aa == 0.d0) then
+                            b = 0.d0
+                        else
+                            b = s / aa
+                        end if
+
+                        eig1c = cmplx(-0.5*(aa+b) - p/3.d0, 0.5d0*sqrt(3.d0)*(aa-b), kind=8)
+                        eig2c = cmplx(real(eig1c,kind=8), -aimag(eig1c), kind=8) 
+                        eig3r = aa + b - p/3.d0
+
+                        !! real right eigenvector
+
+                        delta1 = (a(1,1) - eig3r) * (a(2,2) - eig3r) - a(2,1)*a(1,2)
+                        delta2 = (a(2,2) - eig3r) * (a(3,3) - eig3r) - a(2,3)*a(3,2)
+                        delta3 = (a(1,1) - eig3r) * (a(3,3) - eig3r) - a(1,3)*a(3,1)
+
+                        if (delta1 == 0.d0 .and. delta2 == 0.d0 .and. delta3 == 0.d0) then
+                            write(*,*) 'ERROR: delta1 = delta2 = delta3 = 0.0'
+                            write(*,*) a(1,1)-eig3r,  a(1,2),       a(1,3)
+                            write(*,*) a(2,1),        a(2,2)-eig3r, a(2,3)
+                            write(*,*) a(3,1),        a(3,2),       a(3,3)-eig3r
+                            stop
+                        end if
+
+                        if (abs(delta1) >= abs(delta2) .and. abs(delta1) >= abs(delta3)) then
+
+                            r_star(1) = (-(a(2,2)-eig3r)*a(1,3) +         a(1,2)*a(2,3))/delta1
+                            r_star(2) = (         a(2,1)*a(1,3) - (a(1,1)-eig3r)*a(2,3))/delta1
+                            r_star(3) = 1.d0
+
+                        else if (abs(delta2) >= abs(delta1) .and. abs(delta2) >= abs(delta3)) then
+
+                            r_star(1) = 1.d0
+                            r_star(2) = (-(a(3,3)-eig3r)*a(2,1) +         a(2,3)*a(3,1))/delta2
+                            r_star(3) = (         a(3,2)*a(2,1) - (a(2,2)-eig3r)*a(3,1))/delta2
+
+                        else if (abs(delta3) >= abs(delta1) .and. abs(delta3) >= abs(delta2)) then
+
+                            r_star(1) = (-(a(3,3)-eig3r)*a(1,2) +         a(1,3)*a(3,2))/delta3
+                            r_star(2) = 1.d0
+                            r_star(3) = (         a(3,1)*a(1,2) - (a(1,1)-eig3r)*a(3,2))/delta3
+
+                        else
+                            write(*,*) 'ERROR: '
+                            write(*,*) delta1, delta2, delta3
+                            stop
+                        end if
+
+                        norm_r_star = sqrt(r_star(1)*r_star(1) + r_star(2)*r_star(2) + r_star(3)*r_star(3))
+
+                        normalized_real_eigvec(i,j,k,1) = r_star(1) / norm_r_star
+                        normalized_real_eigvec(i,j,k,2) = r_star(2) / norm_r_star
+                        normalized_real_eigvec(i,j,k,3) = r_star(3) / norm_r_star
+
+                        w = vorticity(a)
+
+                        call find_rotation_matrix(z_0, normalized_real_eigvec, rotation_matrix)
+
+                        rotated_vel_grad = matmul( matmul(transpose(rotation_matrix), a), rotation_matrix )
+
+                        alpha(i,j,k) = 0.5d0 * sqrt((rotated_vel_grad(2,2) - rotated_vel_grad(1,1))**2 + (rotated_vel_grad(2,1) + rotated_vel_grad(1,2))**2)
+                        beta(i,j,k)  = 0.5d0 * (rotated_vel_grad(2,1) - rotated_vel_grad(1,2))
+
+                        beta_alpha = beta(i,j,k)*beta(i,j,k) - alpha(i,j,k)*alpha(i,j,k)
+
+                        if (beta_alpha > max_beta_alpha) then
+                            max_beta_alpha = beta_alpha
+                        end if
+
+                        lambda_cr(i,j,k) = real(eig1c, kind=8)
+                        lambda_r(i,j,k) = eig3r
+
+					else
+					
+						mod_omega_liutex_mag(i,j,k) = 0.d0
+						mod_omega_liutex_vec(i,j,k,:) = 0.d0
+						
+					end if
+					
                 end do
             end do
         end do
 
+		epsilon = b_0 * max_beta_alpha
 
         do k = 1, kmax
             do j = 1, jmax
                 do i = 1, imax
 
+					denominator = beta(i,j,k)*beta(i,j,k) + alpha(i,j,k)*alpha(i,j,k) + lambda_cr(i,j,k)*lambda_cr(i,j,k) &
+								  + 0.5d0*lambda_r(i,j,k)*lambda_r(i,j,k) + epsilon
 
-
-                end do
+					mod_omega_liutex_mag(i,j,k) = beta(i,j,k)*beta(i,j,k) / denominator
+					
+					mod_omega_liutex_vec(i,j,k,1) = mod_omega_liutex_mag(i,j,k) * normalized_real_eigvec(i,j,k,1)
+					mod_omega_liutex_vec(i,j,k,2) = mod_omega_liutex_mag(i,j,k) * normalized_real_eigvec(i,j,k,2)
+					mod_omega_liutex_vec(i,j,k,3) = mod_omega_liutex_mag(i,j,k) * normalized_real_eigvec(i,j,k,3)
+                
+				end do
             end do
         end do
 
