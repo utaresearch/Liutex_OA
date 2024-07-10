@@ -18,35 +18,40 @@
 int main()
 {
     printf("Math Department - University of Texas Arlington \n");
-    printf("\nTesting Liutex Function \n");
+    printf("\nTesting Liutex Function with sample velocity gradient tensors.\n");
     
     /// real_eigvals_vgt := velocity gradient tensor with all real eigenvalues.
     /// imag_eigvals_vgt := velocity gradient tensor with imaginary eigenvalues.
-    double real_eigvals_vgt[3][3] = { {-2.0, -4.0, 2.0}, {-2.0, 1.0, 2.0}, {4.0, 2.0, 5.0} };
-    double imag_eigvals_vgt[3][3] = { {4.0, -3.0, 7.0}, {3.0, 4.0, 0.0}, {5.0, 10.0, 10.0} };
+    double real_eigvals_vgt[3][3] = { {-2.0, -4.0, 2.0}, 
+                                      {-2.0,  1.0, 2.0},
+                                      { 4.0,  2.0, 5.0} };
+
+    double imag_eigvals_vgt[3][3] = { {4.0, -3.0,  7.0}, 
+                                      {3.0,  4.0,  0.0},
+                                      {5.0, 10.0, 10.0} };
 
     /// Initializing Liutex magnitude (R) and Liutex vector (r).
     double R_real, R_imag;
     double r_real[3], r_imag[3];
     
-    liutex(real_eigvals_vgt, &R_real, &r_real);
-    liutex(imag_eigvals_vgt, &R_imag, &r_imag);
+    liutex(real_eigvals_vgt, R_real, r_real);
+    liutex(imag_eigvals_vgt, R_imag, r_imag);
 
     /// Printing Results:
-    printf("\n\[ Velocity gradient tensor with all real eigenvalues \]\n");
-    printf("Liutex magnitude R: ", R_real, "\n");
-    printf("Liutex vector r:  ");
-    for (int i = 0; i < sizeof(r_real); i++)
+    printf("\n Velocity gradient tensor with all real eigenvalues \n");
+    printf("Liutex magnitude R: %f \n", R_real);
+    printf("Liutex vector r:  \n");
+    for (int i = 0; i < 3; i++)
     {
-        printf(" ", r_real[i], " ");
+        printf("%lf \n", r_real[i]);
     }
 
-    printf("\n\n[ Velocity gradient tensor with complex conjugate eigenvalues ]\n");
-    printf("Liutex magnitude R: ", R_imag, "\n");
-    printf("Liutex vector r:  ");
-    for (int i = 0; i < sizeof(r_imag); i++)
+    printf("\n\n Velocity gradient tensor with complex conjugate eigenvalues \n");
+    printf("Liutex magnitude R: %f \n", R_imag);
+    printf("Liutex vector r:  \n");
+    for (int i = 0; i < 3; i++)
     {
-        printf(" ", r_imag[i], "  ");
+        printf("%lf \n", r_imag[i]);
     }
 
     printf("\n");
