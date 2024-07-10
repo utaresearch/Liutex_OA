@@ -16,7 +16,13 @@ module liutex_mod
     contains
 
     !! Subroutines
-    subroutine liutex(velocity_gradient_tensor, liutex_vector, liutex_magnitude, imax, jmax, kmax)
+    subroutine liutex(velocity_gradient_tensor, liutex_vector, liutex_magnitude, imax, jmax, kmax)\
+        !!! Oscar Alvarez
+        
+        !!! Link to paper which contains this algorithm:
+        !!! https://pubs.aip.org/aip/pof/article/30/8/085107/937414/Rortex-and-comparison-with-eigenvalue-based-vortex 
+
+
         implicit none
 
         real(8), dimension(3), parameter :: z0 = (/0.d0, 0.d0, 1.d0/)
@@ -173,10 +179,10 @@ module liutex_mod
                     else 
                         !! Velocity gradient has three real roots so Liutex = 0.
 
+                        liutex_magnitude(i,j,k) = 0.0d0
                         liutex_vector(i,j,k,1) = 0.0d0
                         liutex_vector(i,j,k,2) = 0.0d0
                         liutex_vector(i,j,k,3) = 0.0d0
-                        liutex_magnitude(i,j,k) = 0.0d0
 
                     end if
 
@@ -189,7 +195,7 @@ module liutex_mod
 
     subroutine find_rotation_matrix(u, v, rotation_matrix)
         !-------------------------------------------------------------------------------
-        ! calculate rotation matrix r which rotates unit vector u to unit vector v
+        ! Calculate rotation matrix r which rotates unit vector u to unit vector v
         ! using Rodrigues' rotation formula.
         !-------------------------------------------------------------------------------
         
@@ -201,10 +207,7 @@ module liutex_mod
         real(8), dimension(3,3), intent(out) :: rotation_matrix
     
         real(8), dimension(3) :: a
-        real(8) :: aa
-        real(8) :: t
-        real(8) :: alpha
-        real(8) :: c, s
+        real(8) :: aa, t, alpha, c, s
 
     
         ! a = u x v
