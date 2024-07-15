@@ -22,20 +22,22 @@ int main()
     
     /// real_eigvals_vgt := velocity gradient tensor with all real eigenvalues.
     /// imag_eigvals_vgt := velocity gradient tensor with imaginary eigenvalues.
-    double real_eigvals_vgt[3][3] = { {-2.0, -4.0, 2.0}, 
-                                      {-2.0,  1.0, 2.0},
-                                      { 4.0,  2.0, 5.0} };
+    double real_eigvals_vg[3][3] = { {-2.0, -4.0, 2.0}, 
+                                     {-2.0,  1.0, 2.0},
+                                     { 4.0,  2.0, 5.0} };
 
-    double imag_eigvals_vgt[3][3] = { {4.0, -3.0,  7.0}, 
-                                      {3.0,  4.0,  0.0},
-                                      {5.0, 10.0, 10.0} };
+    double imag_eigvals_vg[3][3] = { {4.0, -3.0,  7.0}, 
+                                     {3.0,  4.0,  0.0},
+                                     {5.0, 10.0, 10.0} };
 
-    /// Initializing Liutex magnitude (R) and Liutex vector (r).
-    double R_real, R_imag;
-    double r_real[3], r_imag[3];
+    /// Initializing Liutex vector (r).
+    double r_real[3];
+    double r_imag[3];
     
-    liutex(real_eigvals_vgt, R_real, r_real);
-    liutex(imag_eigvals_vgt, R_imag, r_imag);
+    liutex(real_eigvals_vg, r_real);
+
+    /// Calculate Liutex magnitude.
+    double R_real = sqrt(r_real[0] * r_real[0] + r_real[1] * r_real[1] + r_real[2] * r_real[2]);
 
     /// Printing Results:
     printf("\n Velocity gradient tensor with all real eigenvalues \n");
@@ -43,15 +45,21 @@ int main()
     printf("Liutex vector r:  \n");
     for (int i = 0; i < 3; i++)
     {
-        printf("%lf \n", r_real[i]);
+        printf("%f \n", r_real[i]);
     }
 
+    liutex(imag_eigvals_vg, r_imag);
+
+    /// Calculate Liutex magnitude.
+    double R_imag = sqrt(r_imag[0] * r_imag[0] + r_imag[1] * r_imag[1] + r_imag[2] * r_imag[2]);
+
+    /// Printing Results:
     printf("\n\n Velocity gradient tensor with complex conjugate eigenvalues \n");
     printf("Liutex magnitude R: %f \n", R_imag);
     printf("Liutex vector r:  \n");
     for (int i = 0; i < 3; i++)
     {
-        printf("%lf \n", r_imag[i]);
+        printf("%f \n", r_imag[i]);
     }
 
     printf("\n");

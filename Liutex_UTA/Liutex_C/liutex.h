@@ -12,19 +12,16 @@
 /// Arlington, Texas, United States
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <complex.h>
-#undef I
 #include <math.h>
 #include <stdio.h>
 
-// I used pointers for R and r but you can remove the pointers and just return the values.
-void liutex(double velocity_gradient_tensor[3][3], double R, double r[3])
+
+void liutex(double velocity_gradient_tensor[3][3], double r[3])
 {
   /* velocity_gradient_tensor = [  du/dx  du/dy  du/dz
                                    dv/dx  dv/dy  dv/dz
                                    dw/dx  dw/dy  dw/dz  ]
   */
-  // R = liutex magnitude R.
   // r = liutex vector r.
 
   /// Extract the eigenvalues from the velocity gradient tensor. ///
@@ -44,6 +41,7 @@ void liutex(double velocity_gradient_tensor[3][3], double R, double r[3])
   /// ! Reference: Numerical Recipes in FORTRAN 77, Second Edition
   /// ! 5.6 Quadratic and Cubic Equations
   /// ! Page 179
+  /// !----- Cardano's solution of the cubic equation -----
   /// !---------------------------------------------------------------------
   /// 
   /// ! cubic equation
@@ -75,18 +73,17 @@ void liutex(double velocity_gradient_tensor[3][3], double R, double r[3])
                 + a[0][2] * (a[1][0]*a[2][1]-a[1][1]*a[2][0]) );
 
   /// delta is the discriminant of characteristic equation for the velocity graidient tensor.
-  double delta = 18.0*aa*bb*cc - 4.0*pow(aa,3) * cc + aa*aa * bb*bb - 4.0*pow(bb,3) - 27.0*cc*cc;
-  delta = delta / 108.0;
+  double qq = (aa * aa - 3.0 * bb) / 9.0;
+  double rr = (2.0 * pow(aa, 3) - 9.0 * aa * bb + 27.0 * cc) / 54.0;
+
+  double delta = pow(qq, 3) - pow(rr, 2);
     
   /// If the discriminant is less than 0 (delta < 0) then the velocity gradient tensor has one
-  /// real eigenvalue and two complex conjugate eigenvalues and thus Liutex exists. 
+  /// real eigenvalue and two complex conjugate eigenvalues and thus Liutex exists; 
   /// Else, the velocity gradient tensor has three real eigenvalues and Liutex is equal to 0.
   if (delta < 0.0)
   {
-    delta = -delta;
-
-    double qq = (aa*aa - 3.0*bb) / 9.0;
-    double rr = (2.0*pow(aa,3) - 9.0*aa*bb + 27.0*cc) / 54.0;
+    double R;
 
     double sign;
     if (rr < 0)
@@ -102,7 +99,7 @@ void liutex(double velocity_gradient_tensor[3][3], double R, double r[3])
       sign = 0.0;
     }
     
-    double aaaa = -sign * pow(abs(rr) + sqrt(delta), 1.0/3.0);
+    double aaaa = -sign * pow(abs(rr) + sqrt(-delta), 1.0/3.0);
 
     double bbbb;
     if (aaaa == 0.0)
@@ -163,7 +160,7 @@ void liutex(double velocity_gradient_tensor[3][3], double R, double r[3])
     double temp_vec[3];
     double transformation_matrix[3][3];
 
-    double eps = 1.0e-10;
+    double eps = 1.0e-9;
 
     temp_vec[0] = z0[1] * r[2] - z0[2] * r[1];
     temp_vec[1] = z0[2] * r[0] - z0[0] * r[2];
@@ -244,24 +241,24 @@ void liutex(double velocity_gradient_tensor[3][3], double R, double r[3])
       }
     }
 
-    /// vg = velocity_gradient_tensor * transformation_matrix.
-    double vg[3][3];
+    /// vgt = velocity_gradient_tensor * transformation_matrix.
+    double vgt[3][3];
 
     for (int i = 0; i < 3; i++)
     {
       for (int j = 0; j < 3; j++)
       {
-        vg[i][j] = 0.0;
+        vgt[i][j] = 0.0;
 
         for (int k = 0; k < 3; k++)
         {
-          vg[i][j] += a[i][k] * transformation_matrix[k][j];
+          vgt[i][j] += a[i][k] * transformation_matrix[k][j];
         }
       }
     }
 
-    double alpha = 0.5 * sqrt( pow(vg[1][1] - vg[0][0], 2) + pow(vg[1][0] + vg[0][1], 2) );
-    double beta  = 0.5 * (vg[1][0] - vg[0][1]);
+    double alpha = 0.5 * sqrt( pow(vgt[1][1] - vgt[0][0], 2) + pow(vgt[1][0] + vgt[0][1], 2) );
+    double beta  = 0.5 * (vgt[1][0] - vgt[0][1]);
 
     if (beta*beta > alpha*alpha)
     {
@@ -282,18 +279,14 @@ void liutex(double velocity_gradient_tensor[3][3], double R, double r[3])
     }
     else
     {
-      R = 0.0;
       r[0] = 0.0;
       r[1] = 0.0;
       r[2] = 0.0;
     }
-
-    R = sqrt( r[0] * r[0] + r[1] * r[1] + r[2] * r[2] );
   }
   else
   {
     /// All eigenvalue are real so Liutex = 0.
-    R = 0.0;
     r[0] = 0.0;
     r[1] = 0.0;
     r[2] = 0.0;
