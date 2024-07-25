@@ -24,11 +24,15 @@ void liutex(double velocity_gradient_tensor[3][3], double r[3])
   */
   // r = liutex vector r.
 
+  r[0] = 0.0;
+  r[1] = 0.0;
+  r[2] = 0.0;
+
   /// Extract the eigenvalues from the velocity gradient tensor. ///
   /// This part of the method finds the eigenvalues of the velocity gradient tensor.
   /// If you have better methods that do this for you, you can use them.
 
-  double a[3][3];
+  double a[3][3] = { 0.0 };
 
   for (int i = 0; i < 3; i++)
   {
@@ -37,40 +41,29 @@ void liutex(double velocity_gradient_tensor[3][3], double r[3])
       a[i][j] = velocity_gradient_tensor[i][j];
     }
   }
-  /// ! Cubic Formula
-  /// ! Reference: Numerical Recipes in FORTRAN 77, Second Edition
-  /// ! 5.6 Quadratic and Cubic Equations
-  /// ! Page 179
-  /// !----- Cardano's solution of the cubic equation -----
+
+  /// !----- Cardano's solution for the cubic equation -----
   /// !---------------------------------------------------------------------
   /// 
-  /// ! cubic equation
-  /// ! x**3 + aa * x**2 + bb * x + cc = 0
+  /// ! cubic equation:
+  /// ! x^3 + aa * x^2 + bb * x + cc = 0
   /// 
   /// ! coefficients of characteristic equation for the velocity gradient tensor.
 
-  double aa = -( a[0][0] + a[1][1] + a[2][2] );
+  // Negative the Trace of velocity gradient.
+  double aa = - a[0][0] - a[1][1] - a[2][2];
 
-  /// If you can find a method for multiplying matrices, you can use it.
-  /// Squaring the velocity gradient tensor (i.e., tt = a^2 = a*a).
-  double tt[3][3];
+  double bb =   a[0][0] * a[1][1] - a[0][1] * a[1][0] 
+             + a[0][0] * a[2][2] - a[0][2] * a[2][0] 
+             + a[1][1] * a[2][2] - a[1][2] * a[2][1];
 
-  for (int i = 0; i < 3; i++)
-  {
-    for (int j = 0; j < 3; j++)
-    {
-      for (int k = 0; k < 3; k++)
-      {
-        tt[i][j] += a[i][k] * a[k][j];
-      }
-    }
-  }
-
-  double bb = -0.5 * ( tt[0][0] + tt[1][1] + tt[2][2] - pow(a[0][0] + a[1][1] + a[2][2], 2) );
-
-  double cc = -(  a[0][0] * (a[1][1]*a[2][2]-a[1][2]*a[2][1])
-                - a[0][1] * (a[1][0]*a[2][2]-a[1][2]*a[2][0])
-                + a[0][2] * (a[1][0]*a[2][1]-a[1][1]*a[2][0]) );
+  // Negative the Determinate of velocity gradient.
+  double cc = - a[0][0] * a[1][1] * a[2][2] 
+             - a[0][1] * a[1][2] * a[2][0] 
+             - a[0][2] * a[1][0] * a[2][1] 
+             + a[0][2] * a[1][1] * a[2][0] 
+             + a[0][1] * a[1][0] * a[2][2] 
+             + a[0][0] * a[1][2] * a[2][1];
 
   /// delta is the discriminant of characteristic equation for the velocity graidient tensor.
   double qq = (aa * aa - 3.0 * bb) / 9.0;
@@ -81,11 +74,12 @@ void liutex(double velocity_gradient_tensor[3][3], double r[3])
   /// If the discriminant is less than 0 (delta < 0) then the velocity gradient tensor has one
   /// real eigenvalue and two complex conjugate eigenvalues and thus Liutex exists; 
   /// Else, the velocity gradient tensor has three real eigenvalues and Liutex is equal to 0.
+
   if (delta < 0.0)
   {
-    double R;
+    double R = 0.0;
 
-    double sign;
+    double sign = 1.0;
     if (rr < 0)
     {
       sign = -1.0;
@@ -98,46 +92,46 @@ void liutex(double velocity_gradient_tensor[3][3], double r[3])
     {
       sign = 0.0;
     }
-    
-    double aaaa = -sign * pow(abs(rr) + sqrt(-delta), 1.0/3.0);
 
-    double bbbb;
-    if (aaaa == 0.0)
-    {
-      bbbb = 0.0;
-    }
-    else
+    double aaaa = -sign * pow(abs(rr) + sqrt(-delta), 1.0 / 3.0);
+
+    double bbbb = 0.0;
+    if (aaaa != 0.0)
     {
       bbbb = qq / aaaa;
     }
 
-    /// eigenvalues 1 and 2 are the complex conjugate eigenvalues of the velocity gradient tensor.
-    /// eig3r (eigenvalue 3) is the real eigenvalue of the velocity gradient tensor.
-    double eig3r = aaaa + bbbb - aa/3.0;
-    printf("real eigenvalue: %f \n", eig3r);
+    /// Imaginary/complex conjugate eigenvalues of the velocity gradient tensor.
+    /// imaginary_eigenvalue = lambda_c.
+    /// lambda_cr + lambda_ci * i = real_part + imag_part * i.
+    // double lambda_cr = -0.5 * (aaaa + bbbb) - aa / 3.0;
+    double lambda_ci = 0.5 * sqrt(3.0) * (aaaa - bbbb);
 
-    /// Calculating the real right eigenvalue.
-    double delta1 = (a[0][0] - eig3r) * (a[1][1] - eig3r) - a[1][0]*a[0][1];
-    double delta2 = (a[1][1] - eig3r) * (a[2][2] - eig3r) - a[1][2]*a[2][1];
-    double delta3 = (a[0][0] - eig3r) * (a[2][2] - eig3r) - a[0][2]*a[2][0];
+    /// real_eig_val is the real eigenvalue of the velocity gradient tensor.
+    double real_eig_val = aaaa + bbbb - aa / 3.0;
+
+    //// Calculating the real right eigenvalue.
+    double delta1 = (a[0][0] - real_eig_val) * (a[1][1] - real_eig_val) - a[1][0] * a[0][1];
+    double delta2 = (a[1][1] - real_eig_val) * (a[2][2] - real_eig_val) - a[1][2] * a[2][1];
+    double delta3 = (a[0][0] - real_eig_val) * (a[2][2] - real_eig_val) - a[0][2] * a[2][0];
 
     if (abs(delta1) >= abs(delta2) && abs(delta1) >= abs(delta3))
     {
-      r[0] = (-(a[1][1]-eig3r)*a[0][2] +         a[0][1]*a[1][2]) / delta1;
-      r[1] = (         a[1][0]*a[0][2] - (a[0][0]-eig3r)*a[1][2]) / delta1;
+      r[0] = (-(a[1][1] - real_eig_val) * a[0][2] + a[0][1] * a[1][2]) / delta1;
+      r[1] = (a[1][0] * a[0][2] - (a[0][0] - real_eig_val) * a[1][2])  / delta1;
       r[2] = 1.0;
     }
     else if (abs(delta2) >= abs(delta1) && abs(delta2) >= abs(delta3))
     {
       r[0] = 1.0;
-      r[1] = (-(a[2][2]-eig3r)*a[1][0] +         a[1][2]*a[2][0])/delta2;
-      r[2] = (         a[2][1]*a[1][0] - (a[1][1]-eig3r)*a[2][0])/delta2;
+      r[1] = (-(a[2][2] - real_eig_val) * a[1][0] + a[1][2] * a[2][0]) / delta2;
+      r[2] = (a[2][1] * a[1][0] - (a[1][1] - real_eig_val) * a[2][0])  / delta2;
     }
     else if (abs(delta3) >= abs(delta1) && abs(delta3) >= abs(delta2))
     {
-      r[0] = (-(a[2][2]-eig3r)*a[0][1] +         a[0][2]*a[2][1])/delta3;
+      r[0] = (-(a[2][2] - real_eig_val) * a[0][1] + a[0][2] * a[2][1]) / delta3;
       r[1] = 1.0;
-      r[2] = (         a[2][0]*a[0][1] - (a[0][0]-eig3r)*a[2][1])/delta3;
+      r[2] = (a[2][0] * a[0][1] - (a[0][0] - real_eig_val) * a[2][1])  / delta3;
     }
     else
     {
@@ -145,151 +139,42 @@ void liutex(double velocity_gradient_tensor[3][3], double r[3])
       return;
     }
 
-    double r_norm = sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+    //// Calculate the Liutex magnitude.
 
-    r[0] = r[0] / r_norm;
-    r[1] = r[1] / r_norm;
-    r[2] = r[2] / r_norm;
+    /// Vorticity = w.
+    double w[3] = { 0.0 };
+    w[0] = a[2][1] - a[1][2];
+    w[1] = a[0][2] - a[2][1];
+    w[2] = a[1][0] - a[0][1];
 
-    /// Calculate rotation matrix r which rotates unit vector u to unit vector v.
-    /// z0 = 0, 0, 1; 
-    /// r = liutex_vec
-    /// qqq = transformation matrix
-
-    double z0[3] = { 0.0, 0.0, 1.0 };
-    double temp_vec[3];
-    double transformation_matrix[3][3];
-
-    double eps = 1.0e-9;
-
-    temp_vec[0] = z0[1] * r[2] - z0[2] * r[1];
-    temp_vec[1] = z0[2] * r[0] - z0[0] * r[2];
-    temp_vec[2] = z0[0] * r[1] - z0[1] * r[0];
-
-    aa = sqrt( temp_vec[0]*temp_vec[0] + temp_vec[1]*temp_vec[1] + temp_vec[2]*temp_vec[2] );
-        
-    if (aa < eps)
-    {
-      transformation_matrix[0][0] = 1.0;
-      transformation_matrix[1][1] = 1.0;
-      transformation_matrix[2][2] = 1.0;
-    }
-    else
-    {
-      temp_vec[0] = temp_vec[0] / aa;
-      temp_vec[1] = temp_vec[1] / aa;
-      temp_vec[2] = temp_vec[2] / aa;
-
-      double t = z0[0] * r[0] + z0[1] * r[1] + z0[2] * r[2];
-            
-      if (t > 1.0)
-      {
-        t = 1.0;
-      }
-
-      if (t < -1.0)
-      {
-        t = -1.0;
-      }
-            
-      double alpha = acos(t);
-        
-      double c = cos(alpha);
-      double s = sin(alpha);
-        
-      transformation_matrix[0][0] = temp_vec[0] * temp_vec[0] * (1.0 - c) + c;
-      transformation_matrix[0][1] = temp_vec[0] * temp_vec[1] * (1.0 - c) - temp_vec[2] * s;
-      transformation_matrix[0][2] = temp_vec[0] * temp_vec[2] * (1.0 - c) + temp_vec[1] * s;
-        
-      transformation_matrix[1][0] = temp_vec[1] * temp_vec[0] * (1.0 - c) + temp_vec[2] * s;
-      transformation_matrix[1][1] = temp_vec[1] * temp_vec[1] * (1.0 - c) + c;
-      transformation_matrix[1][2] = temp_vec[1] * temp_vec[2] * (1.0 - c) - temp_vec[0] * s;
-        
-      transformation_matrix[2][0] = temp_vec[2] * temp_vec[0] * (1.0 - c) - temp_vec[1] * s;
-      transformation_matrix[2][1] = temp_vec[2] * temp_vec[1] * (1.0 - c) + temp_vec[0] * s;
-      transformation_matrix[2][2] = temp_vec[2] * temp_vec[2] * (1.0 - c) + c;
-    }
-
-    /// If you can find a method for multiplying matrices, you can use it.
-    /// vg = transpose(transformation_matrix) * velocity_gradient_tensor * transformation_matrix.
-        
-    /// Transpose the transformation matrix.
-    double transposed_transformation_matrix[3][3];
-        
-    for (int i = 0; i < 3 ; i++)
-    {
-      for (int j = 0; j < 3 ; j++)
-      {
-        transposed_transformation_matrix[i][j] = transformation_matrix[j][i];
-      }
-
-    }
-
-    /// matrix_product_1 = transpose_transformation_matrix * velocity_gradient_tensor.
-    double matrix_product_1[3][3];
-
+    /// Dot product of vorticity and normalized real eigenvector of a.
+    double w_dot_r = 0.0;
     for (int i = 0; i < 3; i++)
     {
-      for (int j = 0; j < 3; j++)
-      {
-        matrix_product_1[i][j] = 0.0;
-
-        for (int k = 0; k < 3; k++)
-        {
-          matrix_product_1[i][j] += transposed_transformation_matrix[i][k] * a[k][j];
-        }
-      }
+      w_dot_r = w_dot_r + w[i] * r[i];
     }
 
-    /// vgt = velocity_gradient_tensor * transformation_matrix.
-    double vgt[3][3];
+    /// Direction Condition of Liutex magnitude.
+    if (w_dot_r < 0.0)
+    {
+      r[0] = -1 * r[0];
+      r[1] = -1 * r[1];
+      r[2] = -1 * r[2];
+    }
 
+    /// Recalculate vorticity dot r.
+    w_dot_r = 0.0;
     for (int i = 0; i < 3; i++)
     {
-      for (int j = 0; j < 3; j++)
-      {
-        vgt[i][j] = 0.0;
-
-        for (int k = 0; k < 3; k++)
-        {
-          vgt[i][j] += a[i][k] * transformation_matrix[k][j];
-        }
-      }
+      w_dot_r = w_dot_r + w[i] * r[i];
     }
 
-    double alpha = 0.5 * sqrt( pow(vgt[1][1] - vgt[0][0], 2) + pow(vgt[1][0] + vgt[0][1], 2) );
-    double beta  = 0.5 * (vgt[1][0] - vgt[0][1]);
+    /// Use explicit formula to calculate the Liutex magnitude R.
+    R = w_dot_r - sqrt( pow(w_dot_r, 2) - 4.0 * pow(lambda_ci, 2) );
 
-    if (beta*beta > alpha*alpha)
-    {
-      if(beta > 0.0)
-      {
-        R = 2.0 * (beta - alpha);
-        r[0] = R * r[0];
-        r[1] = R * r[1];
-        r[2] = R * r[2];
-      }
-      else
-      {
-        R = 2.0 * (beta + alpha);
-        r[0] = R * r[0];
-        r[1] = R * r[1];
-        r[2] = R * r[2];
-      }
-    }
-    else
-    {
-      r[0] = 0.0;
-      r[1] = 0.0;
-      r[2] = 0.0;
-    }
-  }
-  else
-  {
-    /// All eigenvalue are real so Liutex = 0.
-    r[0] = 0.0;
-    r[1] = 0.0;
-    r[2] = 0.0;
+    r[0] = R * r[0];
+    r[1] = R * r[1];
+    r[2] = R * r[2];
   }
 
 }

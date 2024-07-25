@@ -17,7 +17,7 @@ clear variables; clc;
 real_velocity_gradient_tensor = [-2 -4 2 ; -2 1 2 ; 4 2 5];
 
 % Velocity gradient tensor with complex eigenvalues.
-imag_velocity_gradient_tensor = [4 -3 7 ; 3 4 0 ; 5 10 10];
+imag_velocity_gradient_tensor = [4.0 -3.0 7.0 ; 3.0 4.0 0.0 ; 5.0 10.0 10.0];
 
 
 fprintf("Results:\n")

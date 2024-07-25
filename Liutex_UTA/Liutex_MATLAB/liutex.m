@@ -45,6 +45,8 @@ function [R, r] = liutex(velocity_gradient_tensor)
     % Save the real eigenvector of the velocity gradient tensor.
     real_eig_vec = real( eig_vec(:,real_index) );
 
+    real_eig_vec = real_eig_vec / norm(real_eig_vec);
+
     % Save the imaginary part of the complex eigenvalues of the 
     % velocity gradient tensor.
     lambda_ci = imag( eig_val(imaginary_index,imaginary_index) );
