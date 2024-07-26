@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
 {
   printf("\n\n===================================================");
   printf("\nUniversity of Texas Arlington - United States\nDepartment of Mathematics\nOscar Alvarez\n");
-  printf("===================================================\n\n\n");
+  printf("===================================================\n\n");
   char file_name[20] = "ER10.05280.dat";
 
   FILE *f_ptr;

@@ -343,10 +343,18 @@ void liutex(float velocity_gradient_tensor[3][3], float r[3])
 
     //// Calculate the Liutex magnitude.
 
+    /// Normalize r.
+    float norm_r = sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+
+    r[0] = r[0] / norm_r;
+    r[1] = r[1] / norm_r;
+    r[2] = r[2] / norm_r;
+
+
     /// Vorticity = w.
     float w[3];
     w[0] = a[2][1] - a[1][2];
-    w[1] = a[0][2] - a[2][1];
+    w[1] = a[0][2] - a[2][0];
     w[2] = a[1][0] - a[0][1];
 
     /// Dot product of vorticity and normalized real eigenvector of a.
@@ -379,11 +387,22 @@ void liutex(float velocity_gradient_tensor[3][3], float r[3])
     }
     else
     {
-      printf("\nRADICAND FOR EXPLICIT FORMULA FOR LIUTEX MAGNITUDE R IS NEGATIVE (-).\nNO SOLUTION FOR R.\n");
-      printf("radicand = %f", radicand);
-      printf("r = %f  %f  %f", r[0], r[1], r[2]);
-      exit(0);
+      R = w_dot_r;
     }
+    /*else
+    {
+      printf("\nRADICAND FOR EXPLICIT FORMULA FOR LIUTEX MAGNITUDE R IS NEGATIVE (-).\nNO SOLUTION FOR R.\n");
+      printf("Velocity gradient tensor\n");
+      printf("%f  %f  %f\n",   a[0][0], a[0][1], a[0][2]);
+      printf("%f  %f  %f\n",   a[1][0], a[1][1], a[1][2]);
+      printf("%f  %f  %f\n\n", a[2][0], a[2][1], a[2][2]);
+      printf("w = %f  %f  %f\n", w[0], w[1], w[2]);
+      printf("w_dot_r = %f\n", w_dot_r);
+      printf("lambda_ci = %f\n", lambda_ci);
+      printf("radicand = %f\n", radicand);
+      printf("r = %f  %f  %f\n\n", r[0], r[1], r[2]);
+      exit(0);
+    }*/
 
     r[0] = R * r[0];
     r[1] = R * r[1];
