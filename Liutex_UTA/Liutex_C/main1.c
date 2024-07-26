@@ -187,6 +187,7 @@ int main(int argc, char* argv[])
   printf("\nCALCULATING LIUTEX.\n");
 
   float vel_grad[3][3];
+  float r[3];
 
   for (int k = 0; k < kmax; k++)
   {
@@ -197,6 +198,7 @@ int main(int argc, char* argv[])
         // Find the velocity gradient.
         gradient_3d(x, y, z, u, v, w, i, j, k, imax, jmax, kmax, vel_grad);
 
+        liutex(vel_grad, r);
 
       }
     }

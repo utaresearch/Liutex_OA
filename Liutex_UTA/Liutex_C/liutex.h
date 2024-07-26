@@ -14,6 +14,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 
 
@@ -337,7 +338,7 @@ void liutex(float velocity_gradient_tensor[3][3], float r[3])
     else
     {
       printf("ERROR: delta1, delta2, delta3\n");
-      return;
+      exit(0);
     }
 
     //// Calculate the Liutex magnitude.
@@ -371,7 +372,18 @@ void liutex(float velocity_gradient_tensor[3][3], float r[3])
     }
 
     /// Use explicit formula to calculate the Liutex magnitude R.
-    R = w_dot_r - sqrt( pow(w_dot_r, 2) - 4.0 * pow(lambda_ci, 2) );
+    float radicand = pow(w_dot_r, 2) - 4.0 * pow(lambda_ci, 2);
+    if (radicand > 0.0)
+    {
+      R = w_dot_r - sqrt(pow(w_dot_r, 2) - 4.0 * pow(lambda_ci, 2));
+    }
+    else
+    {
+      printf("\nRADICAND FOR EXPLICIT FORMULA FOR LIUTEX MAGNITUDE R IS NEGATIVE (-).\nNO SOLUTION FOR R.\n");
+      printf("radicand = %f", radicand);
+      printf("r = %f  %f  %f", r[0], r[1], r[2]);
+      exit(0);
+    }
 
     r[0] = R * r[0];
     r[1] = R * r[1];
