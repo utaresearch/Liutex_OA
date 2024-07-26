@@ -115,13 +115,13 @@ void gradient_3d(float *x, float *y, float *z,
       int index_jmax_m1 = get_index3(i,jmax-1,k,imax,jmax,kmax);
       int index_jmax_m2 = get_index3(i,jmax-2,k,imax,jmax,kmax);
 
-      u_eta = *(u index_jmax_m1) - *(u + index_jmax_m2);
-      v_eta = *(v index_jmax_m1) - *(v + index_jmax_m2);
-      w_eta = *(w index_jmax_m1) - *(w + index_jmax_m2);
+      u_eta = *(u + index_jmax_m1) - *(u + index_jmax_m2);
+      v_eta = *(v + index_jmax_m1) - *(v + index_jmax_m2);
+      w_eta = *(w + index_jmax_m1) - *(w + index_jmax_m2);
 
-      x_eta = *(x index_jmax_m1) - *(x + index_jmax_m2);
-      y_eta = *(y index_jmax_m1) - *(y + index_jmax_m2);
-      z_eta = *(z index_jmax_m1) - *(z + index_jmax_m2);
+      x_eta = *(x + index_jmax_m1) - *(x + index_jmax_m2);
+      y_eta = *(y + index_jmax_m1) - *(y + index_jmax_m2);
+      z_eta = *(z + index_jmax_m1) - *(z + index_jmax_m2);
     }  
     else
     {
