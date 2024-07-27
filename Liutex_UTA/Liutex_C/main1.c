@@ -22,21 +22,23 @@
 int main(int argc, char* argv[])
 {
   printf("\n\n===================================================");
-  printf("\nUniversity of Texas Arlington - United States\nDepartment of Mathematics\nOscar Alvarez\n");
+  printf("\nUniversity of Texas Arlington\nDepartment of Mathematics\nOscar Alvarez\nUnited States\n");
   printf("===================================================\n\n");
-  char file_name[20] = "ER10.05280.dat";
+  
+  char input_file_name[]  = "ER10.05280.dat";
+  char output_file_name[] = "ER10.05280_liutex.dat";
 
   FILE *f_ptr;
 
-  fopen_s(&f_ptr, file_name, "r");
+  fopen_s(&f_ptr, input_file_name, "r");
 
   if (f_ptr == NULL)
   {
-    printf("\nFILE \" %s \" - NOT FOUND.\n", file_name);
+    printf("\nFILE \" %s \" - NOT FOUND.\n", input_file_name);
     exit(0);
   }
 
-  printf("\nFILE \" %s \" - FOUND.\n", file_name);
+  printf("\nFILE \" %s \" - FOUND.\n", input_file_name);
 
   // Read data dimension values.
   int imax, jmax, kmax, nvar;
@@ -69,7 +71,7 @@ int main(int argc, char* argv[])
       {
         for (int i = 0; i < imax; i++)
         {
-            int index = get_index4(i,j,k,n,imax,jmax,kmax,nvar);
+            int index = get_index4(i,j,k,n,imax,jmax,kmax);
             fscanf_s(f_ptr, "%f", data_block + index);
         }
       }
@@ -94,6 +96,10 @@ int main(int argc, char* argv[])
   float *v = (float *)malloc(sizeof(float)*imax*jmax*kmax);
   float *w = (float *)malloc(sizeof(float)*imax*jmax*kmax);
 
+  // Allocate output data array.
+  int n_all = nvar + 4;
+  float* all_data = (float*)malloc(sizeof(float) * imax * jmax * kmax * n_all);
+
   int index;
   int var_index;
 
@@ -103,8 +109,10 @@ int main(int argc, char* argv[])
     {
       for (int i = 0; i < imax; i++)
       {
-        index = get_index3(i, j, k, imax, jmax, kmax);
-        *(x + index) = *(data_block + index);
+        var_index = get_index3(i, j, k, imax, jmax);
+        index = get_index4(i, j, k, 0, imax, jmax, kmax);
+        *(x + var_index) = *(data_block + index);
+        *(all_data + index) = *(data_block + index);
       }
     }
   }
@@ -115,8 +123,8 @@ int main(int argc, char* argv[])
     {
       for (int i = 0; i < imax; i++)
       {
-        var_index = get_index3(i, j, k, imax, jmax, kmax);
-        index = get_index4(i, j, k, 1, imax, jmax, kmax, nvar);
+        var_index = get_index3(i, j, k, imax, jmax);
+        index = get_index4(i, j, k, 1, imax, jmax, kmax);
         *(y + var_index) = *(data_block + index);
       }
     }
@@ -128,8 +136,8 @@ int main(int argc, char* argv[])
     {
       for (int i = 0; i < imax; i++)
       {
-        var_index = get_index3(i, j, k, imax, jmax, kmax);
-        index = get_index4(i, j, k, 2, imax, jmax, kmax, nvar);
+        var_index = get_index3(i, j, k, imax, jmax);
+        index = get_index4(i, j, k, 2, imax, jmax, kmax);
         *(z + var_index) = *(data_block + index);
       }
     }
@@ -141,8 +149,8 @@ int main(int argc, char* argv[])
     {
       for (int i = 0; i < imax; i++)
       {
-        var_index = get_index3(i, j, k, imax, jmax, kmax);
-        index = get_index4(i, j, k, 3, imax, jmax, kmax, nvar);
+        var_index = get_index3(i, j, k, imax, jmax);
+        index = get_index4(i, j, k, 3, imax, jmax, kmax);
         *(u + var_index) = *(data_block + index);
       }
     }
@@ -154,8 +162,8 @@ int main(int argc, char* argv[])
     {
       for (int i = 0; i < imax; i++)
       {
-        var_index = get_index3(i, j, k, imax, jmax, kmax);
-        index = get_index4(i, j, k, 4, imax, jmax, kmax, nvar);
+        var_index = get_index3(i, j, k, imax, jmax);
+        index = get_index4(i, j, k, 4, imax, jmax, kmax);
         *(v + var_index) = *(data_block + index);
       }
     }
@@ -167,8 +175,8 @@ int main(int argc, char* argv[])
     {
       for (int i = 0; i < imax; i++)
       {
-        var_index = get_index3(i, j, k, imax, jmax, kmax);
-        index = get_index4(i, j, k, 5, imax, jmax, kmax, nvar);
+        var_index = get_index3(i, j, k, imax, jmax);
+        index = get_index4(i, j, k, 5, imax, jmax, kmax);
         *(w + var_index) = *(data_block + index);
       }
     }
@@ -200,12 +208,55 @@ int main(int argc, char* argv[])
 
         liutex(vel_grad, r);
 
+        float liutex_magnitude = sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+
+        int index6 = get_index4(i, j, k, 6, imax, jmax, kmax);
+        int index7 = get_index4(i, j, k, 7, imax, jmax, kmax);
+        int index8 = get_index4(i, j, k, 8, imax, jmax, kmax);
+        int index9 = get_index4(i, j, k, 9, imax, jmax, kmax);
+
+        *(all_data + index6) = r[0];
+        *(all_data + index7) = r[1];
+        *(all_data + index8) = r[2];
+        *(all_data + index9) = liutex_magnitude;
+
       }
     }
   }
   
   printf("\nCALCULATIONS FINISHED.\n");
-    
+
+  printf("\nWRITING DATA TO .DAT FILE.\n");
+  
+  FILE *fout_ptr;
+
+  fopen_s(&fout_ptr, output_file_name, "w");
+
+  // Writing data dimensions to first line of file.
+  fprintf_s(fout_ptr, "%d  %d  %d  %d\n", imax, jmax, kmax, n_all);
+
+  // Writing all data to second line of file.
+  for (int n = 0; n < n_all; n++)
+  {
+    for (int k = 0; k < kmax; k++)
+    {
+      for (int j = 0; j < jmax; j++)
+      {
+        for (int i = 0; i < imax; i++)
+        {
+          int index = get_index4(i, j, k, n, imax, jmax, kmax);
+          fprintf_s(fout_ptr, "%lf  ", *(all_data + index));
+        }
+      }
+    }
+  }
+
+  fclose(fout_ptr);
+
+  printf("\nWRITE SUCCESSFUL - \" %s \" GENERATED.\n", output_file_name);
+
+  printf("\nPROGRAM COMPLETE.\n");
+
   return 0;
 
 }

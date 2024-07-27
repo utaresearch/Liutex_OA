@@ -20,14 +20,14 @@
 
 // Index functions for data read and manipulation.
 int get_index3(int i, int j, int k, 
-               int imax, int jmax, int kmax)
+               int imax, int jmax)
 {
     return i + j*imax + k*imax*jmax;
 }
 
 
 int get_index4(int i, int j, int k, int n, 
-               int imax, int jmax, int kmax, int nvar)
+               int imax, int jmax, int kmax)
 {
     return i + j*imax + k*imax*jmax + n*imax*jmax*kmax;
 }
@@ -52,8 +52,8 @@ void gradient_3d(float *x, float *y, float *z,
   /// Using Finite difference scheme to calculate partial derivatives
   if (i == 0)
   {
-    int index_i0 = get_index3(0,j,k,imax,jmax,kmax);
-    int index_i1 = get_index3(1,j,k,imax,jmax,kmax);
+    int index_i0 = get_index3(0,j,k,imax,jmax);
+    int index_i1 = get_index3(1,j,k,imax,jmax);
 
     /// forward difference
     u_xi = *(u + index_i1) - *(u + index_i0);
@@ -67,8 +67,8 @@ void gradient_3d(float *x, float *y, float *z,
   else 
   { if (i == imax-1)
     {
-      int index_imax_m1 = get_index3(imax-1,j,k,imax,jmax,kmax);
-      int index_imax_m2 = get_index3(imax-2,j,k,imax,jmax,kmax);
+      int index_imax_m1 = get_index3(imax-1,j,k,imax,jmax);
+      int index_imax_m2 = get_index3(imax-2,j,k,imax,jmax);
 
       /// backward difference
       u_xi = *(u + index_imax_m1) - *(u + index_imax_m2);
@@ -81,8 +81,8 @@ void gradient_3d(float *x, float *y, float *z,
     }
     else
     {
-      int index_ip1 = get_index3(i+1,j,k,imax,jmax,kmax);
-      int index_im1 = get_index3(i-1,j,k,imax,jmax,kmax);
+      int index_ip1 = get_index3(i+1,j,k,imax,jmax);
+      int index_im1 = get_index3(i-1,j,k,imax,jmax);
 
       /// central difference
       u_xi = 0.5 * (*(u + index_ip1) - *(u + index_im1));
@@ -98,8 +98,8 @@ void gradient_3d(float *x, float *y, float *z,
 
   if (j == 0) 
   {
-    int index_j0 = get_index3(i,0,k,imax,jmax,kmax);
-    int index_j1 = get_index3(i,1,k,imax,jmax,kmax);
+    int index_j0 = get_index3(i,0,k,imax,jmax);
+    int index_j1 = get_index3(i,1,k,imax,jmax);
 
     u_eta = *(u + index_j1) - *(u + index_j0);
     v_eta = *(v + index_j1) - *(v + index_j0);
@@ -113,8 +113,8 @@ void gradient_3d(float *x, float *y, float *z,
   {
     if (j == jmax-1)
     {
-      int index_jmax_m1 = get_index3(i,jmax-1,k,imax,jmax,kmax);
-      int index_jmax_m2 = get_index3(i,jmax-2,k,imax,jmax,kmax);
+      int index_jmax_m1 = get_index3(i,jmax-1,k,imax,jmax);
+      int index_jmax_m2 = get_index3(i,jmax-2,k,imax,jmax);
 
       u_eta = *(u + index_jmax_m1) - *(u + index_jmax_m2);
       v_eta = *(v + index_jmax_m1) - *(v + index_jmax_m2);
@@ -126,8 +126,8 @@ void gradient_3d(float *x, float *y, float *z,
     }  
     else
     {
-      int index_jp1 = get_index3(i,j+1,k,imax,jmax,kmax);
-      int index_jm1 = get_index3(i,j-1,k,imax,jmax,kmax);
+      int index_jp1 = get_index3(i,j+1,k,imax,jmax);
+      int index_jm1 = get_index3(i,j-1,k,imax,jmax);
 
       u_eta = 0.5 * (*(u + index_jp1) - *(u + index_jm1));
       v_eta = 0.5 * (*(v + index_jp1) - *(v + index_jm1));
@@ -141,8 +141,8 @@ void gradient_3d(float *x, float *y, float *z,
 
   if (k == 0)
   {
-    int index_k0 = get_index3(i,j,0,imax,jmax,kmax);
-    int index_k1 = get_index3(i,j,1,imax,jmax,kmax);
+    int index_k0 = get_index3(i,j,0,imax,jmax);
+    int index_k1 = get_index3(i,j,1,imax,jmax);
 
     u_zeta = *(u + index_k1) - *(u + index_k0);
     v_zeta = *(v + index_k1) - *(v + index_k0);
@@ -156,8 +156,8 @@ void gradient_3d(float *x, float *y, float *z,
   {
     if (k == kmax-1) 
     {
-      int index_kmax_m1 = get_index3(i,j,kmax-1,imax,jmax,kmax);
-      int index_kmax_m2 = get_index3(i,j,kmax-2,imax,jmax,kmax);
+      int index_kmax_m1 = get_index3(i,j,kmax-1,imax,jmax);
+      int index_kmax_m2 = get_index3(i,j,kmax-2,imax,jmax);
 
       u_zeta = *(u + index_kmax_m1) - *(u + index_kmax_m2);
       v_zeta = *(v + index_kmax_m1) - *(v + index_kmax_m2);
@@ -169,8 +169,8 @@ void gradient_3d(float *x, float *y, float *z,
     }
     else
     {
-      int index_kp1 = get_index3(i,j,k+1,imax,jmax,kmax);
-      int index_km1 = get_index3(i,j,k-1,imax,jmax,kmax);
+      int index_kp1 = get_index3(i,j,k+1,imax,jmax);
+      int index_km1 = get_index3(i,j,k-1,imax,jmax);
 
       u_zeta = 0.5 * (*(u + index_kp1) - *(u + index_km1));
       v_zeta = 0.5 * (*(v + index_kp1) - *(v + index_km1));
