@@ -1,0 +1,187 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      -->
+<title>testLiutex</title>
+<meta name="generator" content="MATLAB 23.2">
+<link rel="schema.DC" href="http://purl.org/dc/elements/1.1/">
+<meta name="DC.date" content="2024-09-11">
+<meta name="DC.source" content="testLiutex.m">
+<style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+</head>
+<body>
+<div class="content">
+<pre class="codeinput">
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+<span class="comment">% Liutex example MATLAB code.</span>
+</pre>
+<pre class="language-matlab">
+<span class="keyword">for</span> x = 1:10
+    disp(x)
+<span class="keyword">end</span>
+</pre>
+<p>This code shows how to use the liutex function located in the "liutex.m" file.</p>
+<p>Author: Oscar Alvarez</p>
+<p>email: <a href="mailto:oscar.alvarez@uta.edu">oscar.alvarez@uta.edu</a> University of Texas at Arlington Department of Mathematics Center for Numerical Simulation and Modeling (CNSM) Arlington, Texas, United States</p>
+<pre class="codeinput">
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+
+clear <span class="string">variables</span>; clc;
+
+<span class="comment">% Velocity gradient tensor with only real eigenvalues.</span>
+real_velocity_gradient_tensor = [-2 -4 2 ; -2 1 2 ; 4 2 5];
+
+<span class="comment">% Velocity gradient tensor with complex eigenvalues.</span>
+imag_velocity_gradient_tensor = [4.0 -3.0 7.0 ; 3.0 4.0 0.0 ; 5.0 10.0 10.0];
+
+
+fprintf(<span class="string">"Results:\n"</span>)
+
+<span class="comment">% Test velocity gradient tensor with real eigenvalues.</span>
+[R, r] = liutex(real_velocity_gradient_tensor);
+fprintf(<span class="string">"Real eigenvalues: \n"</span>);
+fprintf(<span class="string">"R= %g \n"</span>, R);
+fprintf(<span class="string">"r= %g \n"</span>, r);
+
+fprintf(<span class="string">"\n"</span>);
+
+<span class="comment">% Test velocity gradient tensor with complex eigenvalues.</span>
+[R, r] = liutex(imag_velocity_gradient_tensor);
+fprintf(<span class="string">"Imaginary eigenvalues: \n"</span>)
+fprintf(<span class="string">"R= %g \n"</span>, R);
+fprintf(<span class="string">"r= %g \n"</span>,r);
+</pre>
+<pre class="codeoutput">Results:
+Real eigenvalues: 
+R= 0 
+r= 0 
+r= 0 
+r= 0 
+
+Imaginary eigenvalues: 
+R= 4.67099 
+r= 2.39428 
+r= 0.66994 
+r= 3.95433 
+</pre>
+<p class="footer">
+<br>
+<a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2023b</a>
+<br>
+</p>
+</div>
+<!--
+##### SOURCE BEGIN #####
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Liutex example MATLAB code.
+%%
+% 
+%   for x = 1:10
+%       disp(x)
+%   end
+% 
+% This code shows how to use the liutex function located in the "liutex.m" file.
+% 
+% Author:  Oscar Alvarez
+% 
+% email: oscar.alvarez@uta.edu
+% University of Texas at Arlington
+% Department of Mathematics
+% Center for Numerical Simulation and Modeling (CNSM)
+% Arlington, Texas, United States
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+clear variables; clc;
+
+% Velocity gradient tensor with only real eigenvalues.
+real_velocity_gradient_tensor = [-2 -4 2 ; -2 1 2 ; 4 2 5];
+
+% Velocity gradient tensor with complex eigenvalues.
+imag_velocity_gradient_tensor = [4.0 -3.0 7.0 ; 3.0 4.0 0.0 ; 5.0 10.0 10.0];
+
+
+fprintf("Results:\n")
+
+% Test velocity gradient tensor with real eigenvalues.
+[R, r] = liutex(real_velocity_gradient_tensor);
+fprintf("Real eigenvalues: \n");
+fprintf("R= %g \n", R);
+fprintf("r= %g \n", r);
+
+fprintf("\n");
+
+% Test velocity gradient tensor with complex eigenvalues.
+[R, r] = liutex(imag_velocity_gradient_tensor);
+fprintf("Imaginary eigenvalues: \n")
+fprintf("R= %g \n", R);
+fprintf("r= %g \n",r);
+
+##### SOURCE END #####
+-->
+</body>
+</html>
