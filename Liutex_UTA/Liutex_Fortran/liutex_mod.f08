@@ -595,14 +595,18 @@ module liutex_mod
     end function vector_gradient_tensor
 
 
-    function interpolation(f_x, f_y, f_z, x, y, z, i, j, k, imax, jmax, kmax) result(big_f)
-        !!!!!! UNFINISHED !!!!!!!!!!!
+    function local_interpolation(f_x, f_y, f_z, x, y, z, i, j, k, imax, jmax, kmax) result(big_f)
+        !!!!!! NEEDS TESTING !!!!!!!!!!!
         !! Integrates a vector valued function f = (f_x, f_y, f_z) by the method described
         !! in Fudan paper.
         implicit none
+        
+        !! max_n is how many points max you want to generate.
+        integer, parameter :: max_n = 100
+
         integer, intent(in) :: i, j, k, imax, jmax, kmax
         real(8), dimension(imax,jmax,kmax), intent(in) :: f_x, f_y, f_z, x, y, z
-        real(8), dimension(imax,jmax,kmax,3) :: big_f
+        real(8), dimension(max_n,2,3) :: big_f
 
         real(8), dimension(8) :: alpha
         real(8), dimension(8) :: x_s, y_s, z_s, fx_s, fy_s, fz_s
@@ -724,11 +728,19 @@ module liutex_mod
             y_i = y_i + ds(2)*fy_i
             z_i = z_i + ds(3)*fz_i
             
-        end do
+            !! Save interpolated position values.
+            big_f(n,1,1) = x_i
+            big_f(n,1,2) = y_i
+            big_f(n,1,3) = z_i
             
+            !! Save interpolated function values.
+            big_f(n,2,1) = fx_i
+            big_f(n,2,2) = fy_i
+            big_f(n,2,3) = fz_i
 
+        end do
 
-    end function interpolation
+    end function local_interpolation
 
 
     function hessian_mat(f, x, y, z, imax, jmax, kmax) result(h_mat)
