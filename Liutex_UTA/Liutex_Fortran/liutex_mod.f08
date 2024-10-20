@@ -595,6 +595,122 @@ module liutex_mod
     end function vector_gradient_tensor
 
 
+    function interpolate_data(function_data, x, y, z, imax, jmax, kmax) result(interpolated_data)
+        !!!!!! UNDER CONSTRUCTION !!!!!!!!
+        !! interpolated non-uniform grid and function data.
+
+        !! Control volume element node ordering:
+        !!         
+        !!                     back
+        !!
+        !!            5         15       8
+        !!              *-------*-------*
+        !!             /|              /|
+        !!            / |             / |
+        !!           /  *20          /  * 19
+        !!          /   |           *14 |
+        !!       16*    |     11   /    |
+        !!        /    4*------*--/-----*3
+        !!       /     /         /     /
+        !!      /     /    *21  /     /
+        !!     /     / 13      /     /
+        !!  6 *-----/--*------*7    /
+        !!    |    /          |    * 10
+        !!    |   *12         |   / 
+        !!  17*  /          18*  /
+        !!    | /             | /
+        !!    |/              |/
+        !!    *-------*-------*
+        !!   1        9        2   
+        !!
+        !!       front
+        !!
+        !! vertices: 1, 2, 3, 4, 5, 6, 7, 8
+        !! intermediate nodes: 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+        !! interior node: 21
+
+
+        implicit none
+
+        integer, intent(in) :: imax, jmax, kmax
+        real(8), dimension(imax,jmax,kmax), intent(in) :: function_data
+        real(8), dimension(:,:,:) :: interpolated_data
+
+        real(8), dimension(21) :: 
+
+
+
+        !! Calculate interplated data dimensions.
+
+
+        !! allocate variables
+
+
+        !! loop through function data nodes.
+        do k = 1, kmax-1
+            do j = 1, jmax-1
+                do i = 1, imax-1
+        
+                    !! Create control volume element in positive direction.
+                    n1 = create_control_volume_element(f, i, j, k, imax, jmax, kmax)
+                
+                    !! Begin interpolation
+
+                    !! add new node location and values to interpolated_data array
+    
+                end do
+            end do
+        end do
+
+
+        !! go to next function data node.
+
+        !! return interplated_data array.
+
+        !! deallocate variables
+
+    end function interpolate_data
+    
+
+    function create_control_volume_element(f, i, j, k, imax, jmax, kmax) result(f_element_nodes)
+
+        !! Creates a control volume element for the interpolate_data function.
+        !!
+        !! Control volume element node ordering:
+        !!         
+        !!         5             8
+        !!          *-----------* 
+        !!         /|          /|
+        !!        / |         / |
+        !!       /  |        /  |
+        !!      /  4*-------/---* 3 
+        !!     /   /       /   /
+        !!  6 *---/-------*7  /
+        !!    |  /        |  /
+        !!    | /         | /
+        !!    |/          |/
+        !!    *-----------*
+        !!   1            2   
+        !!
+        implicit none
+        
+        integer, intent(in) :: i, j, k
+        real(8), dimension(imax,jmax,kmax) intent(in) :: f
+        real(8), dimension(21) :: f_element_nodes
+        
+        f_element_nodes(1) = f(i  , j  , k  )
+        f_element_nodes(2) = f(i+1, j  , k  )
+        f_element_nodes(3) = f(i+1, j+1, k  )
+        f_element_nodes(4) = f(i  , j+1, k  )
+        f_element_nodes(5) = f(i  , j+1, k+1)
+        f_element_nodes(6) = f(i  , j  , k+1)
+        f_element_nodes(7) = f(i+1, j  , k+1)
+        f_element_nodes(8) = f(i+1, j+1, k+1)        
+
+    end function create_control_volume_element
+
+
+
     function local_interpolation(f_x, f_y, f_z, x, y, z, i, j, k, imax, jmax, kmax) result(big_f)
         !!!!!! NEEDS TESTING !!!!!!!!!!!
         !! Integrates a vector valued function f = (f_x, f_y, f_z) by the method described
