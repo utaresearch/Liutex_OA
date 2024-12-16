@@ -79,7 +79,7 @@ if __name__ == "__main__":
     Author: Oscar Alvarez
     Email: oscar.alvarez@uta.edu
     """
-    example_vel_grad_matrix = [[4.0, -3.0,  0.0],
+    example_vel_grad_matrix = [[4.0, -3.0,  7.0],
                                [3.0,  4.0,  0.0],
                                [5.0, 10.0, 10.0]]
     

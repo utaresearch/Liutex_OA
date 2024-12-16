@@ -1,11 +1,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Liutex example MATLAB code.
-%%
-% 
-%   for x = 1:10
-%       disp(x)
-%   end
-% 
+%
 % This code shows how to use the liutex function located in the "liutex.m" file.
 % 
 % Author:  Oscar Alvarez

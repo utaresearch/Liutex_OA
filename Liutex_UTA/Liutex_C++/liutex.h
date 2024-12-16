@@ -250,8 +250,8 @@ void liutex(std::vector<std::vector<double>> velocity_gradient_tensor, double& R
             }
         }
 
-        double alpha = 0.5 * sqrt( pow(vg[1][1] - vg[0][0], 2) + pow(vg[1][0] + vg[0][1], 2) );
-        double beta  = 0.5 * (vg[1][0] - vg[0][1]);
+        double alpha = sqrt( pow(vg[1][1] - vg[0][0], 2) + pow(vg[1][0] + vg[0][1], 2) );
+        double beta  = (vg[1][0] - vg[0][1]);
 
         if (beta*beta > alpha*alpha)
         {
@@ -287,6 +287,8 @@ void liutex(std::vector<std::vector<double>> velocity_gradient_tensor, double& R
         r[1] = 0.0;
         r[2] = 0.0;
     }
+
+
 
     return;
 
