@@ -294,3 +294,325 @@ void liutex(std::vector<std::vector<double>> velocity_gradient_tensor, double& R
 
 }
 
+
+void omega_liutex(std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>> velocity_gradient_tensor, 
+                  std::vector<std::vector<std::vector<double>>>& ol,
+                  int imax, 
+                  int jmax,
+                  int kmax)
+{
+  /* velocity_gradient_tensor dim[i,j,k,3,3] = [ [  du/dx  du/dy  du/dz
+                                                    dv/dx  dv/dy  dv/dz
+                                                    dw/dx  dw/dy  dw/dz  ], [...], ... ]
+  */
+
+  double b_0 = 1.0e-4;
+  double max_beta_alpha = 0.0;
+
+  std::vector<double> r(3, 0);
+
+  std::vector<std::vector<std::vector<double>>> alpha(imax, std::vector<std::vector<double>>(jmax, std::vector<double>(kmax, 0)));
+  std::vector<std::vector<std::vector<double>>> beta(imax, std::vector<std::vector<double>>(jmax, std::vector<double>(kmax, 0)));
+  std::vector<std::vector<std::vector<double>>> lambda_cr(imax, std::vector<std::vector<double>>(jmax, std::vector<double>(kmax, 0)));
+  std::vector<std::vector<std::vector<double>>> lambda_r(imax, std::vector<std::vector<double>>(jmax, std::vector<double>(kmax, 0)));
+
+  for (auto k = 0; k < kmax; k++)
+  {
+    for (auto j = 0; j < jmax; j++)
+    {
+      for (auto i = 0; i < imax; i++)
+      {
+        /// ol = Omega Liutex
+
+        /// Extract the eigenvalues from the velocity gradient tensor. ///
+        /// This part of the method finds the eigenvalues of the velocity gradient tensor.
+        /// If you have methods that do this for you, please use them.
+
+        const std::vector<std::vector<double>> a = velocity_gradient_tensor[i][j][k];
+
+        /// ! Cubic Formula
+        /// ! Reference: Numerical Recipes in FORTRAN 77, Second Edition
+        /// ! 5.6 Quadratic and Cubic Equations
+        /// ! Page 179
+        /// !---------------------------------------------------------------------
+        /// 
+        /// ! cubic equation
+        /// ! x**3 + aa * x**2 + bb * x + cc = 0
+        /// 
+        /// ! coefficients of characteristic equation for the velocity gradient tensor.
+
+        double aa = -(a[0][0] + a[1][1] + a[2][2]);
+
+        /// If you can find a method for multiplying matrices, you can use it.
+        /// Squaring the velocity gradient tensor (i.e., tt = a^2 = a*a).
+        std::vector<std::vector<double>> tt(3, std::vector<double>(3, 0.0));
+
+        for (uint8_t i = 0; i < 3; i++)
+        {
+          for (uint8_t j = 0; j < 3; j++)
+          {
+            for (uint8_t k = 0; k < 3; k++)
+            {
+              tt[i][j] += a[i][k] * a[k][j];
+            }
+          }
+        }
+
+        double bb = -0.5 * (tt[0][0] + tt[1][1] + tt[2][2] - pow(a[0][0] + a[1][1] + a[2][2], 2));
+
+        double cc = -(a[0][0] * (a[1][1] * a[2][2] - a[1][2] * a[2][1])
+          - a[0][1] * (a[1][0] * a[2][2] - a[1][2] * a[2][0])
+          + a[0][2] * (a[1][0] * a[2][1] - a[1][1] * a[2][0]));
+
+        /// delta is the discriminant of characteristic equation for the velocity graidient tensor.
+        double delta = 18.0 * aa * bb * cc - 4.0 * pow(aa, 3) * cc + aa * aa * bb * bb - 4.0 * pow(bb, 3) - 27.0 * cc * cc;
+        delta = delta / 108.0;
+
+        /// If the discriminant is less than 0 (delta < 0) then the velocity gradient tensor has one
+        /// real eigenvalue and two complex conjugate eigenvalues and thus Liutex exists. 
+        /// Else, the velocity gradient tensor has three real eigenvalues and Liutex is equal to 0.
+        if (delta < 0.0)
+        {
+          delta = -delta;
+
+          double qq = (aa * aa - 3.0 * bb) / 9.0;
+          double rr = (2.0 * pow(aa, 3) - 9.0 * aa * bb + 27.0 * cc) / 54.0;
+
+          double sign;
+          if (std::signbit(rr))
+          {
+            sign = -1.0;
+          }
+          else
+          {
+            sign = 1.0;
+          }
+          double aaaa = -sign * pow(abs(rr) + sqrt(delta), 1.0 / 3.0);
+
+          double bbbb;
+          if (aaaa == 0.0)
+          {
+            bbbb = 0.0;
+          }
+          else
+          {
+            bbbb = qq / aaaa;
+          }
+
+          /// eig1c, eig2c = the complex conjugate eigenvalues of the velocity gradient tensor.
+          /// eig3r = the real eigenvalue of the velocity graident tensor.
+          std::complex<double> eig1c(-0.5 * (aaaa + bbbb) - aa / 3.0, 0.5 * sqrt(3.0) * (aaaa - bbbb));
+          std::complex<double> eig2c(eig1c.real(), -eig1c.imag());
+          double eig3r = aaaa + bbbb - aa / 3.0;
+
+          lambda_cr[i][j][k] = eig1c.real();
+          lambda_r[i][j][k] = eig3r;
+
+          /// Calculating the real right eigenvalue.
+          double delta1 = (a[0][0] - eig3r) * (a[1][1] - eig3r) - a[1][0] * a[0][1];
+          double delta2 = (a[1][1] - eig3r) * (a[2][2] - eig3r) - a[1][2] * a[2][1];
+          double delta3 = (a[0][0] - eig3r) * (a[2][2] - eig3r) - a[0][2] * a[2][0];
+
+          if (abs(delta1) >= abs(delta2) && abs(delta1) >= abs(delta3))
+          {
+            r[0] = (-(a[1][1] - eig3r) * a[0][2] + a[0][1] * a[1][2]) / delta1;
+            r[1] = (a[1][0] * a[0][2] - (a[0][0] - eig3r) * a[1][2]) / delta1;
+            r[2] = 1.0;
+          }
+          else if (abs(delta2) >= abs(delta1) && abs(delta2) >= abs(delta3))
+          {
+            r[0] = 1.0;
+            r[1] = (-(a[2][2] - eig3r) * a[1][0] + a[1][2] * a[2][0]) / delta2;
+            r[2] = (a[2][1] * a[1][0] - (a[1][1] - eig3r) * a[2][0]) / delta2;
+          }
+          else if (abs(delta3) >= abs(delta1) && abs(delta3) >= abs(delta2))
+          {
+            r[0] = (-(a[2][2] - eig3r) * a[0][1] + a[0][2] * a[2][1]) / delta3;
+            r[1] = 1.0;
+            r[2] = (a[2][0] * a[0][1] - (a[0][0] - eig3r) * a[2][1]) / delta3;
+          }
+          else
+          {
+            std::cout << "ERROR: delta1, delta2, delta3\n";
+            return;
+          }
+
+          double r_norm = sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+
+          r[0] = r[0] / r_norm;
+          r[1] = r[1] / r_norm;
+          r[2] = r[2] / r_norm;
+
+          /// Calculate rotation matrix r which rotates unit vector u to unit vector v.
+
+          /// u = z0 = 0, 0, 1; 
+          /// v = r = liutex_vec
+          /// r = qqq= transformation matrix
+
+          std::vector<double> z0 = { 0.0, 0.0, 1.0 };
+          std::vector<double> temp_vec(3);
+          std::vector<std::vector<double>> transformation_matrix(3, std::vector<double>(3, 0.0));
+
+          double eps = 1.0e-10;
+
+          temp_vec[0] = z0[1] * r[2] - z0[2] * r[1];
+          temp_vec[1] = z0[2] * r[0] - z0[0] * r[2];
+          temp_vec[2] = z0[0] * r[1] - z0[1] * r[0];
+
+          aa = sqrt(temp_vec[0] * temp_vec[0] + temp_vec[1] * temp_vec[1] + temp_vec[2] * temp_vec[2]);
+
+          if (aa < eps)
+          {
+            transformation_matrix[0][0] = 1.0;
+            transformation_matrix[1][1] = 1.0;
+            transformation_matrix[2][2] = 1.0;
+          }
+          else
+          {
+            temp_vec[0] = temp_vec[0] / aa;
+            temp_vec[1] = temp_vec[1] / aa;
+            temp_vec[2] = temp_vec[2] / aa;
+
+            double t = z0[0] * r[0] + z0[1] * r[1] + z0[2] * r[2];
+
+            if (t > 1.0)
+            {
+              t = 1.0;
+            }
+
+            if (t < -1.0)
+            {
+              t = -1.0;
+            }
+
+            double alpha = acos(t);
+
+            double c = cos(alpha);
+            double s = sin(alpha);
+
+            transformation_matrix[0][0] = temp_vec[0] * temp_vec[0] * (1.0 - c) + c;
+            transformation_matrix[0][1] = temp_vec[0] * temp_vec[1] * (1.0 - c) - temp_vec[2] * s;
+            transformation_matrix[0][2] = temp_vec[0] * temp_vec[2] * (1.0 - c) + temp_vec[1] * s;
+
+            transformation_matrix[1][0] = temp_vec[1] * temp_vec[0] * (1.0 - c) + temp_vec[2] * s;
+            transformation_matrix[1][1] = temp_vec[1] * temp_vec[1] * (1.0 - c) + c;
+            transformation_matrix[1][2] = temp_vec[1] * temp_vec[2] * (1.0 - c) - temp_vec[0] * s;
+
+            transformation_matrix[2][0] = temp_vec[2] * temp_vec[0] * (1.0 - c) - temp_vec[1] * s;
+            transformation_matrix[2][1] = temp_vec[2] * temp_vec[1] * (1.0 - c) + temp_vec[0] * s;
+            transformation_matrix[2][2] = temp_vec[2] * temp_vec[2] * (1.0 - c) + c;
+          }
+
+          /// If you can find a method for multiplying matrices, you can use it.
+          /// vg = transpose(transformation_matrix) * velocity_gradient_tensor * transformation_matrix.
+
+          /// Transpose the transformation matrix.
+          std::vector<std::vector<double>> transpose_transformation_matrix(3, std::vector<double>(3, 0.0));
+
+          for (uint8_t i = 0; i < 3; i++)
+          {
+            for (uint8_t j = 0; j < 3; j++)
+            {
+              transpose_transformation_matrix[i][j] = transformation_matrix[j][i];
+            }
+
+          }
+
+          /// matrix_product_1 = transpose_transformation_matrix * velocity_gradient_tensor.
+          std::vector<std::vector<double>> matrix_product_1(3, std::vector<double>(3, 0.0));
+
+          for (uint8_t i = 0; i < 3; i++)
+          {
+            for (uint8_t j = 0; j < 3; j++)
+            {
+              matrix_product_1[i][j] = 0.0;
+
+              for (uint8_t k = 0; k < 3; k++)
+              {
+                matrix_product_1[i][j] += transpose_transformation_matrix[i][k] * a[k][j];
+              }
+            }
+          }
+
+          /// vg = velocity_gradient_tensor * transformation_matrix.
+          std::vector<std::vector<double>> tvg(3, std::vector<double>(3, 0.0));
+
+          for (uint8_t i = 0; i < 3; i++)
+          {
+            for (uint8_t j = 0; j < 3; j++)
+            {
+              tvg[i][j] = 0.0;
+
+              for (uint8_t k = 0; k < 3; k++)
+              {
+                tvg[i][j] += a[i][k] * transformation_matrix[k][j];
+              }
+            }
+          }
+
+          alpha[i][j][k] = sqrt(pow(tvg[1][1] - tvg[0][0], 2) + pow(tvg[1][0] + tvg[0][1], 2));
+          beta[i][j][k] = tvg[1][0] - tvg[0][1];
+
+          double beta_alpha = beta[i][j][k] * beta[i][j][k] - alpha[i][j][k] * alpha[i][j][k];
+
+          double max_beta_alpha = 0;
+
+          if (beta_alpha > max_beta_alpha)
+          {
+            max_beta_alpha = beta_alpha;
+          }
+
+        }
+        
+        else
+        
+        {
+
+          ol[i][j][k] = 0.0;
+
+        }
+
+
+      }
+    }
+  }
+
+  double epsilon = b_0 * max_beta_alpha;
+
+
+  for (auto k = 0; k < kmax; k++)
+  {
+    for (auto j = 0; j < jmax; j++)
+    {
+      for (auto i = 0; i < imax; i++)
+      {
+
+        if (beta[i][j][k] * beta[i][j][k] > alpha[i][j][k] * alpha[i][j][k])
+        {
+          double denominator = beta[i][j][k] * beta[i][j][k]
+                              + alpha[i][j][k] * alpha[i][j][k]
+                              + lambda_cr[i][j][k] * lambda_cr[i][j][k]
+                              + 0.5 * lambda_r[i][j][k] * lambda_r[i][j][k]
+                              + epsilon;
+
+          ol[i][j][k] = beta[i][j][k] * beta[i][j][k] / denominator;
+ 
+          if (ol[i][j][k] < 0.0)
+          {
+            ol[i][j][k] = 0.0;
+          }
+
+        }
+        else
+        {
+          ol[i][j][k] = 0.0;
+        }
+
+      }
+    }
+  }
+
+  return;
+
+}
+
